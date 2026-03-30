@@ -1,151 +1,139 @@
-# AI Agent with Dual Implementation
+# Vertex AI Agent with Dual OpenTelemetry Export
 
-This project supports **two different agent implementations** that can be configured via `.env`:
+A Google ADK (Agent Development Kit) agent package with dual OpenTelemetry export capability - sends telemetry to both local files and Portal26 cloud simultaneously.
 
-## 🤖 Agent Types
+## 🏗️ Architecture
 
-### 1. **Manual Agent** (`agent_manual.py`)
-- DIY implementation with manual tool orchestration
-- Uses `google.generative_models.GenerativeModel`
-- Tools: `get_weather()`, `get_order_status()`
-- Full control over LLM calls and tool execution
+```
+Vertex AI Agent → ngrok Tunnel → Local OTEL Collector
+                                        ↓
+                        ┌───────────────┼───────────────┐
+                        ↓               ↓               ↓
+                  Local Files      Portal26        Console
+                  (JSON files)     (Cloud)         (Debug)
+```
 
-### 2. **ADK Agent** (`agent.py`)
-- Google Agent Development Kit (ADK) framework
-- Uses `google.adk.agents.Agent` (if available)
-- Tools: `get_weather()`, `get_current_time()`
-- Framework handles orchestration automatically
+## 📁 Package Structure
 
-## ⚙️ Configuration
+```
+adk_agent/
+├── __init__.py         # OTEL bootstrap - adds custom OTLP exporter
+├── agent.py            # Agent definition with tools and CustomAdkApp
+├── requirements.txt    # Dependencies for deployment
+└── .env               # Environment configuration (OTEL endpoints, credentials)
+```
 
-Edit `.env` to choose which agent(s) to run:
+## 🚀 Quick Start
+
+### 1. Configure Environment
+
+Edit `adk_agent/.env`:
 
 ```bash
-# Option 1: Use AGENT_MODE (simple)
-AGENT_MODE=manual    # Use only manual agent (default)
-AGENT_MODE=adk       # Use only ADK agent
-AGENT_MODE=both      # Run both agents in parallel
+# Google Cloud
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
 
-# Option 2: Individual toggles (advanced)
-ENABLE_MANUAL_AGENT=true
-ENABLE_ADK_AGENT=false
-```
-
-## 🚀 Setup
-
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Configure Google Cloud
-Update `.env` with your actual project ID:
-```bash
-GOOGLE_CLOUD_PROJECT=your-actual-project-id
-```
-
-### 3. Enable Required GCP APIs
-- [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com)
-- [Cloud Trace API](https://console.cloud.google.com/apis/library/cloudtrace.googleapis.com)
-- [Cloud Resource Manager API](https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com)
-
-### 4. Authenticate
-```bash
-gcloud auth application-default login
-```
-
-## 🏃 Running
-
-### Start the API server:
-```bash
-uvicorn app:app --reload
-```
-
-### Endpoints:
-- `GET /` - Service info and agent status
-- `GET /status` - Current agent configuration
-- `POST /chat` - Send messages to agent(s)
-
-### Test it:
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is the weather in New York?"}'
-```
-
-## 📊 Response Formats
-
-### Single Agent Mode
-```json
-{
-  "final_answer": "The weather in New York is sunny, 22°C..."
-}
-```
-
-### Both Agents Mode
-```json
-{
-  "mode": "both",
-  "results": {
-    "manual_agent": {
-      "final_answer": "..."
-    },
-    "adk_agent": {
-      "response": "..."
-    }
-  }
-}
-```
-
-## 📁 File Structure
-```
-├── agent.py              # ADK agent (framework-based)
-├── agent_manual.py       # Manual agent (DIY)
-├── agent_router.py       # Router that switches between agents
-├── app.py                # FastAPI application
-├── telemetry.py          # OpenTelemetry setup
-├── requirements.txt      # Python dependencies
-└── .env                  # Configuration
-```
-
-## 🔍 Telemetry
-
-Both agents include OpenTelemetry tracing:
-- **Manual agent**: Custom spans for each LLM call and tool execution
-- **ADK agent**: Framework-managed tracing + custom OTLP exporter
-
-### Telemetry Backends
-
-Configure via `.env` using `OTEL_TRACES_EXPORTER`:
-
-**Option 1: OTLP (Portal26 or custom)**
-```bash
-OTEL_TRACES_EXPORTER=otlp
-OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-tenant1.portal26.in:4318
+# OTEL Export (Dual: Local Collector + Portal26)
+OTEL_EXPORTER_OTLP_ENDPOINT=https://your-ngrok-url.ngrok-free.dev
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64-credentials>
-OTEL_RESOURCE_ATTRIBUTES=portal26.user.id=relusys,portal26.tenant_id=tenant1
+OTEL_SERVICE_NAME=ai-agent-engine
+
+# Resource Attributes
+OTEL_RESOURCE_ATTRIBUTES=portal26.user.id=your-user,portal26.tenant_id=your-tenant,service.version=1.0
 ```
 
-**Option 2: GCP Cloud Trace**
+### 2. Deploy to Vertex AI
+
 ```bash
-OTEL_TRACES_EXPORTER=gcp_trace
-GOOGLE_CLOUD_PROJECT=your-project-id
+python -m google.adk.cli deploy agent_engine \
+  --project=your-project-id \
+  --region=us-central1 \
+  --display_name="my-dual-export-agent" \
+  --otel_to_cloud \
+  adk_agent
 ```
 
-The system automatically configures the appropriate exporter based on the setting.
+### 3. Set Up Local Collector (Optional)
 
-## 🛠️ Troubleshooting
+For local telemetry collection, you need:
+- Docker with OTEL Collector
+- ngrok tunnel pointing to collector
+- Collector configured to export to Portal26 + local files
 
-**"No module named 'google.adk'"**
-- The ADK is not yet publicly available
-- Use `AGENT_MODE=manual` in `.env`
+## 🔍 Key Features
 
-**"Vertex AI API not enabled"**
-- Update `GOOGLE_CLOUD_PROJECT` in `.env` with real project ID
-- Enable required APIs in GCP Console
-- Run `gcloud auth application-default login`
+### Custom OTLP Exporter (`__init__.py`)
 
-**"Permission Denied"**
-- Ensure your GCP account has Vertex AI User role
-- Check that APIs are enabled for your project
+Automatically adds OTLP exporter when agent package initializes:
+- Reads `OTEL_EXPORTER_OTLP_ENDPOINT` from environment
+- Parses authorization headers
+- Creates `OTLPSpanExporter` with `BatchSpanProcessor`
+- Adds to existing trace provider (doesn't replace ADK's default)
+
+### Agent Tools (`agent.py`)
+
+**get_weather(city: str)**
+- Returns mock weather data for cities
+- Supports: Bengaluru, New York, London
+
+**get_current_time(city: str)**
+- Returns current time in city's timezone
+- Supports: Bengaluru, New York, London, Tokyo
+
+### Custom App Hook
+
+`CustomAdkApp` extends `AdkApp` with:
+- `set_up()` method that adds custom exporter after ADK initialization
+- Ensures dual export: ADK's cloud trace + custom OTLP endpoint
+
+## 📊 Telemetry Signals
+
+All three OTEL signals are exported:
+
+- **Traces**: Span timing, parent-child relationships, attributes
+- **Logs**: Structured logs with trace correlation
+- **Metrics**: Request counters, response time histograms
+
+## 🔧 Environment Variables Reference
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | `https://example.ngrok-free.dev` |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Auth headers (comma-separated) | `Authorization=Basic xxx` |
+| `OTEL_SERVICE_NAME` | Service identifier | `ai-agent-engine` |
+| `OTEL_RESOURCE_ATTRIBUTES` | Resource metadata | `user.id=x,tenant_id=y` |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID | `my-project-123` |
+| `GOOGLE_CLOUD_LOCATION` | GCP region | `us-central1` |
+
+## 📖 How It Works
+
+1. **Bootstrap**: `__init__.py` runs on import, adds OTLP exporter
+2. **Setup**: `CustomAdkApp.set_up()` ensures exporter added after ADK init
+3. **Execution**: Agent processes requests, OTEL auto-instruments
+4. **Export**: Telemetry sent to configured OTLP endpoint
+5. **Collection**: Local collector receives, routes to multiple destinations
+
+## 🎯 Use Cases
+
+- **Development**: Debug telemetry locally before sending to cloud
+- **Compliance**: Keep local copy of all telemetry data
+- **Reliability**: Continue collecting if cloud backend is down
+- **Analysis**: Query local JSON files with standard tools
+
+## 📝 License
+
+MIT
+
+## 🤝 Contributing
+
+This is a reference implementation for dual OTEL export with Google ADK agents.
+
+---
+
+**Project:** Vertex AI Agent with Dual OpenTelemetry Export
+**Framework:** Google Agent Development Kit (ADK)
+**Model:** Gemini 2.5 Flash
+**Telemetry:** OpenTelemetry (OTLP/HTTP)
