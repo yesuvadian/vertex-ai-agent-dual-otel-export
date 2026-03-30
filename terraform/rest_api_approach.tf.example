@@ -1,0 +1,174 @@
+# Alternative approach using REST API to manage Agent Engine
+# This file shows how to use the REST API directly for more control
+# Rename to rest_api_approach.tf to use
+
+# Note: This requires terraform-provider-restapi
+# terraform {
+#   required_providers {
+#     restapi = {
+#       source  = "Mastercard/restapi"
+#       version = "~> 1.18"
+#     }
+#   }
+# }
+
+# Configure REST API provider with Google Cloud auth
+# provider "restapi" {
+#   uri                  = "https://us-central1-aiplatform.googleapis.com/v1"
+#   write_returns_object = true
+#   create_returns_object = true
+#   headers = {
+#     "Authorization" = "Bearer ${data.google_client_config.default.access_token}"
+#     "Content-Type"  = "application/json"
+#   }
+# }
+
+# Get current GCP access token
+# data "google_client_config" "default" {}
+
+# Get existing agent configuration
+# data "restapi_object" "portal26_ngrok_agent" {
+#   path = "/projects/${var.project_id}/locations/${var.region}/reasoningEngines/${var.portal26_ngrok_agent_id}"
+# }
+
+# Python script to update agent (more reliable approach)
+resource "null_resource" "update_agent_env_python" {
+  triggers = {
+    env_vars = jsonencode(var.portal26_ngrok_agent_env_vars)
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      python3 << 'PYTHON_SCRIPT'
+import json
+import os
+import subprocess
+import sys
+
+def get_agent_config(project_id, location, agent_id):
+    """Get current agent configuration"""
+    cmd = [
+        "gcloud", "ai", "reasoning-engines", "describe",
+        agent_id,
+        f"--location={location}",
+        f"--project={project_id}",
+        "--format=json"
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return json.loads(result.stdout)
+
+def update_env_file(agent_folder, env_vars):
+    """Update .env file with new variables"""
+    env_content = f"""GOOGLE_CLOUD_PROJECT={env_vars['project_id']}
+GOOGLE_CLOUD_LOCATION={env_vars['region']}
+GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY={env_vars['telemetry_enabled']}
+OTEL_EXPORTER_OTLP_ENDPOINT={env_vars['otel_endpoint']}
+OTEL_SERVICE_NAME={env_vars['service_name']}
+OTEL_RESOURCE_ATTRIBUTES={env_vars['resource_attributes']}
+"""
+
+    env_file_path = os.path.join(agent_folder, '.env')
+    with open(env_file_path, 'w') as f:
+        f.write(env_content)
+
+    print(f"Updated {env_file_path}")
+
+def redeploy_agent(project_id, location, agent_id, agent_folder):
+    """Redeploy agent with updated environment variables"""
+    cmd = [
+        "python", "-m", "google.adk.cli",
+        "deploy", "agent_engine", agent_folder,
+        f"--project={project_id}",
+        f"--region={location}",
+        f"--agent_engine_id={agent_id}"
+    ]
+
+    print(f"Redeploying agent {agent_id}...")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print(f"Successfully redeployed agent {agent_id}")
+        return True
+    else:
+        print(f"Failed to redeploy agent {agent_id}")
+        print(result.stderr)
+        return False
+
+# Main execution
+env_vars = ${jsonencode({
+  project_id          = var.project_id
+  region              = var.region
+  telemetry_enabled   = var.portal26_ngrok_agent_env_vars.telemetry_enabled
+  otel_endpoint       = var.portal26_ngrok_agent_env_vars.otel_endpoint
+  service_name        = var.portal26_ngrok_agent_env_vars.service_name
+  resource_attributes = var.portal26_ngrok_agent_env_vars.resource_attributes
+})}
+
+# Get current agent config
+config = get_agent_config(
+    "${var.project_id}",
+    "${var.region}",
+    "${var.portal26_ngrok_agent_id}"
+)
+
+print(f"Current agent: {config.get('displayName', 'Unknown')}")
+
+# Update .env file
+update_env_file("../portal26_ngrok_agent", env_vars)
+
+# Optionally redeploy
+if "${var.trigger_redeploy}" == "true":
+    success = redeploy_agent(
+        "${var.project_id}",
+        "${var.region}",
+        "${var.portal26_ngrok_agent_id}",
+        "portal26_ngrok_agent"
+    )
+    sys.exit(0 if success else 1)
+else:
+    print("Skipping redeployment (trigger_redeploy = false)")
+
+PYTHON_SCRIPT
+    EOT
+
+    interpreter = ["bash", "-c"]
+  }
+}
+
+# Alternative: Use Google Cloud SDK REST API directly with curl
+resource "null_resource" "update_agent_env_curl" {
+  triggers = {
+    env_vars = jsonencode(var.portal26_otel_agent_env_vars)
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Get access token
+      ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+      # Get current agent configuration
+      curl -X GET \
+        "https://${var.region}-aiplatform.googleapis.com/v1/projects/${var.project_id}/locations/${var.region}/reasoningEngines/${var.portal26_otel_agent_id}" \
+        -H "Authorization: Bearer $ACCESS_TOKEN" \
+        -H "Content-Type: application/json" \
+        -o temp_agent_config.json
+
+      echo "Agent configuration retrieved"
+      cat temp_agent_config.json | jq .
+
+      # Update .env file
+      cat > ../portal26_otel_agent/.env << EOF
+GOOGLE_CLOUD_PROJECT=${var.project_id}
+GOOGLE_CLOUD_LOCATION=${var.region}
+GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=${var.portal26_otel_agent_env_vars.telemetry_enabled}
+OTEL_EXPORTER_OTLP_ENDPOINT=${var.portal26_otel_agent_env_vars.otel_endpoint}
+OTEL_SERVICE_NAME=${var.portal26_otel_agent_env_vars.service_name}
+OTEL_RESOURCE_ATTRIBUTES=${var.portal26_otel_agent_env_vars.resource_attributes}
+EOF
+
+      echo ".env file updated for portal26_otel_agent"
+    EOT
+
+    interpreter = ["bash", "-c"]
+  }
+}

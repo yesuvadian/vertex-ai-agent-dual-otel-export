@@ -1,0 +1,28 @@
+# DUMMY VALUES FOR TESTING
+# Use this to test Terraform workflow without affecting production config
+
+project_id = "agentic-ai-integration-490716"
+region     = "us-central1"
+
+# Agent IDs (same - these don't change)
+portal26_ngrok_agent_id = "2658127084508938240"
+portal26_otel_agent_id  = "7483734085236424704"
+
+# DUMMY Environment variables for portal26_ngrok_agent
+portal26_ngrok_agent_env_vars = {
+  telemetry_enabled   = "true"
+  otel_endpoint       = "https://dummy-ngrok-endpoint.ngrok-free.dev"  # DUMMY
+  service_name        = "portal26_ngrok_agent_TEST"  # DUMMY - Added _TEST
+  resource_attributes = "portal26.tenant_id=tenant_test,portal26.user.id=testuser,agent.type=ngrok-test"  # DUMMY
+}
+
+# DUMMY Environment variables for portal26_otel_agent
+portal26_otel_agent_env_vars = {
+  telemetry_enabled   = "true"
+  otel_endpoint       = "https://otel-test.portal26.in:4318"  # DUMMY
+  service_name        = "portal26_otel_agent_TEST"  # DUMMY - Added _TEST
+  resource_attributes = "portal26.tenant_id=tenant_test,portal26.user.id=testuser,agent.type=otel-test"  # DUMMY
+}
+
+# Set to true to trigger redeployment when env vars change
+trigger_redeploy = false  # Keep false for safety - change to true when ready to deploy
