@@ -1,0 +1,39 @@
+# Example Terraform variables file
+# Copy this to terraform.tfvars and fill in your actual values
+# NEVER commit terraform.tfvars to Git!
+
+# GCP Configuration
+project_id = "agentic-ai-integration-490716"
+region     = "us-central1"
+
+# Service Configuration
+service_name    = "ai-agent"
+container_image = "gcr.io/agentic-ai-integration-490716/ai-agent:latest"
+environment     = "production"
+service_version = "1.0"
+
+# Secrets (FILL THESE IN!)
+gemini_api_key  = "your-gemini-api-key-here"
+otel_auth_header = "Authorization=Basic your-base64-credentials-here"
+
+# OpenTelemetry Configuration
+otel_service_name    = "ai-agent"
+otel_endpoint        = "https://otel-tenant1.portal26.in:4318"
+portal26_user_id     = "relusys"
+portal26_tenant_id   = "tenant1"
+
+# Agent Configuration
+agent_mode = "manual" # Options: manual, adk, both
+
+# Resource Configuration
+cpu             = "1"     # Options: "1", "2", "4", "8"
+memory          = "512Mi" # Options: "512Mi", "1Gi", "2Gi", etc.
+timeout_seconds = 300     # Max: 3600 (1 hour)
+concurrency     = 80      # Max requests per instance
+
+# Scaling Configuration
+min_instances = 0  # 0 = scale to zero (cost effective)
+max_instances = 10 # Max number of instances
+
+# Access Control
+allow_unauthenticated = false # Set to true for public access
