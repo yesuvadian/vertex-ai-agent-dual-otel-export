@@ -1,9 +1,11 @@
 import datetime
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent
+from vertexai.agent_engines import AdkApp
 
 
 def get_weather(city: str) -> dict:
+    """Returns mock weather for a given city."""
     mock_data = {
         "bengaluru": "Partly cloudy, 28C. Humidity 70%.",
         "new york":  "Sunny, 22C. Light winds.",
@@ -20,6 +22,7 @@ def get_weather(city: str) -> dict:
 
 
 def get_current_time(city: str) -> dict:
+    """Returns current time for a given city."""
     timezone_map = {
         "bengaluru": "Asia/Kolkata",
         "new york":  "America/New_York",
@@ -51,41 +54,6 @@ root_agent = Agent(
     tools=[get_weather, get_current_time],
 )
 
-
-# Agent Engine app with custom OTEL exporter
-import os
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from vertexai.agent_engines import AdkApp
-
-
-def _add_custom_exporter():
-    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
-    if not endpoint:
-        print("[otel] OTEL_EXPORTER_OTLP_ENDPOINT not set - skipping")
-        return
-    if not endpoint.endswith("/v1/traces"):
-        endpoint = endpoint.rstrip("/") + "/v1/traces"
-    print(f"[otel] Adding custom OTLP exporter -> {endpoint}")
-    try:
-        provider = trace.get_tracer_provider()
-        print(f"[otel] Provider type: {type(provider).__name__}")
-        if hasattr(provider, "add_span_processor"):
-            provider.add_span_processor(
-                BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint))
-            )
-            print(f"[otel] Exporter registered ✅")
-        else:
-            print(f"[otel] ERROR: no add_span_processor on {type(provider)}")
-    except Exception as e:
-        print(f"[otel] ERROR: {e}")
-
-
-class CustomAdkApp(AdkApp):
-    def set_up(self):
-        super().set_up()
-        _add_custom_exporter()
-
-
-app = CustomAdkApp(agent=root_agent)
+# Simple AdkApp without customization
+# OTEL setup happens in __init__.py before this module loads
+app = AdkApp(agent=root_agent)
