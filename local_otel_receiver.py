@@ -116,7 +116,8 @@ class OTELHandler(http.server.BaseHTTPRequestHandler):
             try:
                 headers = {
                     'Content-Type': self.headers.get('Content-Type', 'application/x-protobuf'),
-                    'X-Tenant-ID': 'tenant1'
+                    'X-Tenant-ID': 'tenant1',
+                    'Authorization': 'Basic dGl0YW5pYW06aGVsbG93b3JsZA=='  # Portal26 auth
                 }
                 response = requests.post(
                     PORTAL26_ENDPOINT,
@@ -125,6 +126,8 @@ class OTELHandler(http.server.BaseHTTPRequestHandler):
                     timeout=10
                 )
                 print(f"[OK] Forwarded to Portal26: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"[WARNING] Portal26 response: {response.text}")
             except Exception as e:
                 print(f"[ERROR] Failed to forward to Portal26: {e}")
 
