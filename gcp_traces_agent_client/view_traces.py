@@ -5,10 +5,34 @@ from google.cloud import trace_v1
 from datetime import datetime, timedelta
 import json
 import argparse
+import os
 
 
-PROJECT_ID = "agentic-ai-integration-490716"
-SERVICE_NAME = "gcp_traces_agent"
+# Load configuration from .env file
+def load_config():
+    """Load configuration from .env file"""
+    config = {
+        'PROJECT_ID': 'agentic-ai-integration-490716',
+        'SERVICE_NAME': 'gcp_traces_agent',
+        'FILTER_BY_AGENT': 'true',
+        'DEFAULT_HOURS': '1',
+        'DEFAULT_LIMIT': '10'
+    }
+
+    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+
+    return config
+
+_config = load_config()
+PROJECT_ID = _config['PROJECT_ID']
+SERVICE_NAME = _config['SERVICE_NAME']
 
 
 def format_duration(start_time, end_time):
@@ -82,13 +106,15 @@ def display_trace_tree(trace):
         print()
 
 
-def list_recent_traces(hours=1, limit=10):
-    """List recent traces"""
+def list_recent_traces(hours=1, limit=10, filter_agent=True):
+    """List recent traces, optionally filtered by agent"""
     print("=" * 70)
     print("Recent Traces from Google Cloud Trace")
     print("=" * 70)
     print(f"Project: {PROJECT_ID}")
     print(f"Service: {SERVICE_NAME}")
+    if filter_agent:
+        print(f"Filter: Only traces from {SERVICE_NAME}")
     print(f"Time Range: Last {hours} hour(s)")
     print()
 
@@ -109,6 +135,21 @@ def list_recent_traces(hours=1, limit=10):
         all_traces = []
 
         for trace in traces:
+            # Filter by agent if requested
+            if filter_agent:
+                # Check if trace belongs to gcp_traces_agent
+                is_our_agent = False
+                for span in trace.spans:
+                    if hasattr(span, 'labels') and span.labels:
+                        agent_name = span.labels.get('gen_ai.agent.name', '')
+                        if agent_name == SERVICE_NAME:
+                            is_our_agent = True
+                            break
+
+                # Skip traces from other agents
+                if not is_our_agent:
+                    continue
+
             trace_count += 1
             all_traces.append(trace)
 
@@ -170,9 +211,11 @@ def get_trace_details(trace_id):
         return None
 
 
-def export_traces_to_json(output_file="traces_export.json", hours=1, limit=10):
+def export_traces_to_json(output_file="traces_export.json", hours=1, limit=10, filter_agent=True):
     """Export traces to JSON file"""
     print(f"Exporting traces to {output_file}...")
+    if filter_agent:
+        print(f"Filter: Only traces from {SERVICE_NAME}")
 
     client = trace_v1.TraceServiceClient()
 
@@ -189,6 +232,19 @@ def export_traces_to_json(output_file="traces_export.json", hours=1, limit=10):
         trace_count = 0
 
         for trace in traces:
+            # Filter by agent if requested
+            if filter_agent:
+                is_our_agent = False
+                for span in trace.spans:
+                    if hasattr(span, 'labels') and span.labels:
+                        agent_name = span.labels.get('gen_ai.agent.name', '')
+                        if agent_name == SERVICE_NAME:
+                            is_our_agent = True
+                            break
+                if not is_our_agent:
+                    continue
+
+            trace_count += 1
             trace_count += 1
 
             trace_data = {
@@ -238,12 +294,15 @@ if __name__ == "__main__":
     parser.add_argument("--hours", type=int, default=1, help="Hours to look back (default: 1)")
     parser.add_argument("--limit", type=int, default=10, help="Max traces to fetch (default: 10)")
     parser.add_argument("--export", help="Export traces to JSON file")
+    parser.add_argument("--no-filter", action="store_true", help="Fetch traces from ALL agents (not just gcp_traces_agent)")
 
     args = parser.parse_args()
+
+    filter_agent = not args.no_filter  # Filter by default, unless --no-filter is specified
 
     if args.trace_id:
         get_trace_details(args.trace_id)
     elif args.export:
-        export_traces_to_json(args.export, args.hours, args.limit)
+        export_traces_to_json(args.export, args.hours, args.limit, filter_agent)
     else:
-        list_recent_traces(args.hours, args.limit)
+        list_recent_traces(args.hours, args.limit, filter_agent)

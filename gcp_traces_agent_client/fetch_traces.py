@@ -4,18 +4,44 @@ Fetch traces from Google Cloud Trace using Cloud Trace API
 from google.cloud import trace_v1
 from datetime import datetime, timedelta
 import json
-
-PROJECT_ID = "agentic-ai-integration-490716"
-SERVICE_NAME = "gcp_traces_agent"
+import os
 
 
-def fetch_traces(hours_ago=1, max_results=10):
+# Load configuration from .env file
+def load_config():
+    """Load configuration from .env file"""
+    config = {
+        'PROJECT_ID': 'agentic-ai-integration-490716',
+        'SERVICE_NAME': 'gcp_traces_agent',
+        'FILTER_BY_AGENT': 'true',
+        'DEFAULT_HOURS': '1',
+        'DEFAULT_LIMIT': '10'
+    }
+
+    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+
+    return config
+
+_config = load_config()
+PROJECT_ID = _config['PROJECT_ID']
+SERVICE_NAME = _config['SERVICE_NAME']
+
+
+def fetch_traces(hours_ago=1, max_results=10, filter_agent=True):
     """
     Fetch traces from Cloud Trace API
 
     Args:
         hours_ago: How many hours back to search
         max_results: Maximum number of traces to return
+        filter_agent: Filter to only gcp_traces_agent traces
     """
     print("=" * 70)
     print("Fetching Traces from Google Cloud Trace")
@@ -26,6 +52,8 @@ def fetch_traces(hours_ago=1, max_results=10):
     print(f"Connecting to Cloud Trace API...")
     print(f"Project: {PROJECT_ID}")
     print(f"Service: {SERVICE_NAME}")
+    if filter_agent:
+        print(f"Filter: Only traces from {SERVICE_NAME}")
     print()
 
     client = trace_v1.TraceServiceClient()
@@ -58,6 +86,18 @@ def fetch_traces(hours_ago=1, max_results=10):
         traces_data = []
 
         for trace in traces:
+            # Filter by agent if requested
+            if filter_agent:
+                is_our_agent = False
+                for span in trace.spans:
+                    if hasattr(span, 'labels') and span.labels:
+                        agent_name = span.labels.get('gen_ai.agent.name', '')
+                        if agent_name == SERVICE_NAME:
+                            is_our_agent = True
+                            break
+                if not is_our_agent:
+                    continue
+
             trace_count += 1
 
             print(f"\nTrace #{trace_count}")

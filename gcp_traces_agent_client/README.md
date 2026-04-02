@@ -2,6 +2,8 @@
 
 Client for fetching and viewing traces from Google Cloud Trace API.
 
+**✅ Now with agent filtering:** Fetches only `gcp_traces_agent` traces by default (not all agents).
+
 ---
 
 ## Installation
@@ -11,11 +13,23 @@ cd gcp_traces_agent_client
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+Edit `.env` file to customize:
+
+```env
+PROJECT_ID=agentic-ai-integration-490716
+SERVICE_NAME=gcp_traces_agent          # Agent to filter
+FILTER_BY_AGENT=true                    # Enable filtering
+DEFAULT_HOURS=1
+DEFAULT_LIMIT=10
+```
+
 ---
 
 ## Usage
 
-### 1. View Recent Traces
+### 1. View Recent Traces (Filtered by gcp_traces_agent)
 
 Display recent traces in a hierarchical tree format:
 
@@ -23,12 +37,16 @@ Display recent traces in a hierarchical tree format:
 python view_traces.py
 ```
 
+**Output shows only gcp_traces_agent traces** (filters out other agents).
+
 **Options:**
 ```bash
 python view_traces.py --hours 2 --limit 20
+python view_traces.py --no-filter  # Include ALL agents
 ```
 - `--hours`: How many hours back to search (default: 1)
 - `--limit`: Maximum number of traces (default: 10)
+- `--no-filter`: Fetch traces from ALL agents (not just gcp_traces_agent)
 
 **Output:**
 ```
