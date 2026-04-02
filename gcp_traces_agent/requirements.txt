@@ -1,0 +1,4 @@
+google-adk>=0.1.0
+tzdata
+opentelemetry-exporter-gcp-trace
+google-cloud-trace
