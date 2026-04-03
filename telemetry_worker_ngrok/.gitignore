@@ -1,0 +1,26 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# Logs
+*.log
+
+# Testing
+test_log.json
+test_*.json
+
+# ngrok
+ngrok_url.txt
+
+# Trace Archive (storage)
+trace_archive/
+*.log
