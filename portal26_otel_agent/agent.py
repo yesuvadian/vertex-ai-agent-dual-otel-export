@@ -81,6 +81,22 @@ if endpoint:
     except Exception as e:
         print(f"[OTEL_INIT] Logs setup warning: {e}")
 
+    # ============================================================================
+    # VERTEX AI INSTRUMENTATION - Enables GenAI content capture
+    # ============================================================================
+    try:
+        from opentelemetry.instrumentation.vertexai import VertexAIInstrumentor
+        VertexAIInstrumentor().instrument()
+        print(f"[OTEL_INIT] Vertex AI instrumentation enabled")
+
+        # Check if content capture is enabled
+        content_capture = os.environ.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "false")
+        print(f"[OTEL_INIT] Content capture: {content_capture}")
+    except Exception as e:
+        print(f"[OTEL_INIT] Vertex AI instrumentation warning: {e}")
+
+    print(f"[OTEL_INIT] ✓ OTEL initialization complete!")
+
 else:
     print("[OTEL_INIT] No OTEL_EXPORTER_OTLP_ENDPOINT set, skipping custom OTEL setup")
 

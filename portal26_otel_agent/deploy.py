@@ -1,92 +1,101 @@
 """
-Deploy portal26_otel_agent with full telemetry (traces, metrics, logs + content capture)
+Deploy portal26_otel_agent to Vertex AI Agent Engine with full telemetry
+Uses Agent Engine API (not Reasoning Engine) to enable content capture
 """
-import os
-from dotenv import load_dotenv
+import sys
 import vertexai
-from vertexai.preview import reasoning_engines
-
-# Load environment variables
-load_dotenv()
-
-# Initialize Vertex AI
-project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-location = os.environ.get("GOOGLE_CLOUD_LOCATION")
-
-vertexai.init(
-    project=project,
-    location=location,
-    staging_bucket=f"gs://{project}-staging"
-)
-
-# Import the agent from agent.py
+from vertexai import agent_engines
 from agent import root_agent
+import config
+import otel_config
 
-# Wrapper to provide query() method for Reasoning Engine
-class AgentWrapper:
-    def __init__(self, agent):
-        self.agent = agent
+PROJECT_ID = config.GOOGLE_CLOUD_PROJECT
+LOCATION = config.GOOGLE_CLOUD_LOCATION
 
-    def query(self, *, user_input: str):
-        """Query method required by ReasoningEngine"""
-        return self.agent.run_live(user_input=user_input)
 
-print("=" * 80)
-print("DEPLOYING PORTAL26_OTEL_AGENT")
-print("=" * 80)
-print()
+def deploy():
+    """
+    Deploy agent to Vertex AI Agent Engine with Portal26 OTEL integration
+    """
+    print("=" * 80)
+    print("DEPLOYING PORTAL26_OTEL_AGENT TO VERTEX AI AGENT ENGINE")
+    print("=" * 80)
+    print(f"Project: {PROJECT_ID}")
+    print(f"Location: {LOCATION}")
+    print(f"Model: {config.MODEL_ID}")
+    print()
+    print("🔭 Telemetry Configuration:")
+    print(f"  Service Name: {config.SERVICE_NAME}")
+    print(f"  Portal26 Endpoint: {config.OTEL_ENDPOINT}")
+    print(f"  Tenant ID: {config.TENANT_ID}")
+    print(f"  User ID: {config.USER_ID}")
+    print(f"  Content Capture: {otel_config.OTEL_CONFIG['OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT']}")
+    print()
 
-print("Configuration:")
-print(f"  Agent Name: {root_agent.name}")
-print(f"  Service Name: {os.environ.get('OTEL_SERVICE_NAME')}")
-print(f"  Tenant ID: {os.environ.get('PORTAL26_TENANT_ID')}")
-print(f"  User ID: {os.environ.get('PORTAL26_USER_ID')}")
-print(f"  Portal26 Endpoint: {os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT')}")
-print(f"  Content Capture: {os.environ.get('OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT')}")
-print()
-
-print("Deploying agent to Vertex AI Reasoning Engine...")
-print()
-
-# Deploy the agent using Vertex AI
-try:
-    wrapped_agent = AgentWrapper(root_agent)
-
-    reasoning_engine = reasoning_engines.ReasoningEngine.create(
-        wrapped_agent,
-        requirements=[
-            "google-cloud-aiplatform[reasoningengine,langchain]",
-            "opentelemetry-api",
-            "opentelemetry-sdk",
-            "opentelemetry-instrumentation",
-            "opentelemetry-exporter-otlp-proto-http",
-        ],
+    vertexai.init(
+        project=PROJECT_ID,
+        location=LOCATION,
+        staging_bucket=f"gs://{PROJECT_ID}-adk-staging"
     )
 
-    print()
-    print("=" * 80)
-    print("DEPLOYMENT SUCCESSFUL")
-    print("=" * 80)
-    print(f"Agent Name: {root_agent.name}")
-    print(f"Agent ID: {reasoning_engine.resource_name}")
-    print()
-    print("Test in Console Playground:")
-    project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    location = os.environ.get("GOOGLE_CLOUD_LOCATION")
-    agent_id = reasoning_engine.resource_name.split('/')[-1]
-    print(f"  https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/{location}/agent-engines/{agent_id}/playground?project={project}")
-    print()
-    print("Query endpoint:")
-    print(f"  {reasoning_engine.resource_name}:query")
-    print()
+    try:
+        deployed_agent = agent_engines.create(
+            agent_engine=root_agent,
 
-except Exception as e:
-    print()
-    print("=" * 80)
-    print("DEPLOYMENT FAILED")
-    print("=" * 80)
-    print(f"Error: {e}")
-    print()
-    import traceback
-    traceback.print_exc()
-    print()
+            # Include the agent package
+            extra_packages=["./"],
+
+            # Required packages with OTEL and VertexAI instrumentation support
+            requirements=[
+                "google-adk>=1.17.0",
+                "opentelemetry-api",
+                "opentelemetry-sdk",
+                "opentelemetry-instrumentation",
+                "opentelemetry-exporter-otlp-proto-http",
+                "opentelemetry-instrumentation-vertexai>=2.0b0",  # Critical for content capture
+                "opentelemetry-instrumentation-google-genai>=0.4b0",
+            ],
+
+            display_name="portal26-otel-agent",
+            description="City info agent with full Portal26 OTEL telemetry + content capture",
+
+            # CRITICAL: env_vars enables content capture via Agent Engine
+            env_vars=otel_config.OTEL_CONFIG,
+        )
+
+        print()
+        print("=" * 80)
+        print("✅ DEPLOYMENT SUCCESSFUL")
+        print("=" * 80)
+        print(f"Agent Name: {root_agent.name}")
+        print(f"Resource Name: {deployed_agent.resource_name}")
+        print(f"Display Name: {deployed_agent.display_name}")
+        print()
+        print("🔍 Telemetry Endpoints:")
+        print(f"  Traces: {config.OTEL_ENDPOINT}/v1/traces")
+        print(f"  Logs: {config.OTEL_ENDPOINT}/v1/logs")
+        print(f"  Metrics: {config.OTEL_ENDPOINT}/v1/metrics")
+        print()
+        print("📝 Test in Console Playground:")
+        agent_id = deployed_agent.resource_name.split('/')[-1]
+        print(f"  https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/{LOCATION}/agent-engines/{agent_id}/playground?project={PROJECT_ID}")
+        print()
+        print(f"🆔 Agent ID: {agent_id}")
+        print()
+
+        return 0
+
+    except Exception as e:
+        print()
+        print("=" * 80)
+        print("❌ DEPLOYMENT FAILED")
+        print("=" * 80)
+        print(f"Error: {e}")
+        print()
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(deploy())
