@@ -316,19 +316,3 @@ No built-in visualization for captured telemetry data.
 | Wrapper Required | **LOW** | Code complexity | ✓ AgentWrapper class |
 | No Visualization | **LOW** | Raw data only | ⚠️ External tools |
 
----
-
-## Recommendations
-
-### Immediate (Must Do)
-1. ✓ Accept content capture limitation - documented
-2. ✓ Ignore metrics 404 errors - working as expected
-
-### Short Term (Should Do)
-1. Create basic visualization dashboard
-
-### Long Term (Nice to Have)
-1. Investigate Cloud Run direct deployment for content capture
-2. Build Portal26 UI integration
-3. Implement real-time streaming (if needed)
-4. Add automated testing for telemetry pipeline
