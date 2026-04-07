@@ -257,35 +257,7 @@ for record_str in records_raw:
 
 ---
 
-## 6. Deployment Timeouts
-
-### Issue
-Occasional deployment failures with **timeout or network errors**.
-
-### Observed Errors
-```
-503 Service Unavailable: failed to connect to all addresses
-TimeoutError: Operation did not complete within 900 seconds
-```
-
-### Root Cause
-- Transient Google Cloud API connectivity issues
-- IPv6 networking problems
-- GCP region availability
-
-### Impact
-- Agent creation succeeds (gets ID)
-- Agent fails to start (Cloud Run container issue)
-- Retry usually succeeds
-
-### Mitigation
-- Retry deployment on failure
-- Check Cloud Run logs for startup errors
-- Verify network connectivity to GCP APIs
-
----
-
-## 7. AgentWrapper Requirement
+## 6. AgentWrapper Requirement
 
 ### Issue
 Vertex AI Reasoning Engine requires agents to have a `query()` method.
@@ -314,7 +286,7 @@ class AgentWrapper:
 
 ---
 
-## 8. AWS Credentials Security
+## 7. AWS Credentials Security
 
 ### Issue
 Kinesis AWS credentials should be provided via environment variables in `pull_agent_logs.py`.
@@ -340,7 +312,7 @@ Use one of the following secure methods:
 
 ---
 
-## 9. Kinesis Shard Hardcoded
+## 8. Kinesis Shard Hardcoded
 
 ### Issue
 Code assumes specific shard: `shardId-000000000006`
@@ -366,7 +338,7 @@ for shard in shards:
 
 ---
 
-## 10. No Automatic Trace Aggregation
+## 9. No Automatic Trace Aggregation
 
 ### Issue
 Each Kinesis fetch creates **separate files** - no automatic aggregation.
@@ -391,7 +363,7 @@ Use external tools:
 
 ---
 
-## 11. Limited Error Context
+## 10. Limited Error Context
 
 ### Issue
 When traces fail to capture, minimal debugging information available.
@@ -408,7 +380,7 @@ When traces fail to capture, minimal debugging information available.
 
 ---
 
-## 12. No Metrics Visualization
+## 11. No Metrics Visualization
 
 ### Issue
 No built-in visualization for captured telemetry data.
@@ -435,7 +407,6 @@ No built-in visualization for captured telemetry data.
 | 1-2 Min Latency | **MEDIUM** | Not real-time | ❌ No (by design) |
 | .env Not Deployed | **LOW** | Manual config needed | ✓ Hardcode in agent.py |
 | Multi-line JSON | **LOW** | Parsing complexity | ✓ Custom parser |
-| Deployment Timeouts | **MEDIUM** | Occasional failures | ✓ Retry |
 | Wrapper Required | **LOW** | Code complexity | ✓ AgentWrapper class |
 | Hardcoded Credentials | **HIGH** | Security risk | ⚠️ Use env vars/IAM |
 | Hardcoded Shard | **MEDIUM** | Brittle | ⚠️ Dynamic discovery |
@@ -456,7 +427,6 @@ No built-in visualization for captured telemetry data.
 1. Implement dynamic shard discovery
 2. Add trace aggregation script
 3. Create basic visualization dashboard
-4. Document deployment retry procedure
 
 ### Long Term (Nice to Have)
 1. Investigate Cloud Run direct deployment for content capture
