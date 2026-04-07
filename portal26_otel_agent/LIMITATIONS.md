@@ -286,101 +286,7 @@ class AgentWrapper:
 
 ---
 
-## 7. AWS Credentials Security
-
-### Issue
-Kinesis AWS credentials should be provided via environment variables in `pull_agent_logs.py`.
-
-```python
-AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
-AWS_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
-```
-
-### Best Practices
-Use one of the following secure methods:
-1. **Environment variables** (current implementation)
-   ```bash
-   export AWS_ACCESS_KEY_ID="your-key-id"
-   export AWS_SECRET_ACCESS_KEY="your-secret-key"
-   ```
-2. **AWS IAM roles** (if running on AWS)
-3. **AWS credentials file** (~/.aws/credentials)
-4. **AWS Secrets Manager** (for production)
-
-### Current Status
-✅ **Credentials via environment variables** - suitable for development/staging. Consider IAM roles or Secrets Manager for production.
-
----
-
-## 8. Kinesis Shard Hardcoded
-
-### Issue
-Code assumes specific shard: `shardId-000000000006`
-
-```python
-SHARD_ID = "shardId-000000000006"
-```
-
-### Impact
-- Won't work if data is in different shard
-- Manual update required if shards change
-- No automatic shard discovery
-
-### Better Approach
-```python
-# Discover all shards dynamically
-response = kinesis.describe_stream(StreamName=STREAM_NAME)
-shards = response['StreamDescription']['Shards']
-for shard in shards:
-    shard_id = shard['ShardId']
-    # Process each shard
-```
-
----
-
-## 9. No Automatic Trace Aggregation
-
-### Issue
-Each Kinesis fetch creates **separate files** - no automatic aggregation.
-
-### Output Pattern
-```
-agent_logs_20260407_103734.jsonl
-agent_logs_20260407_104425.jsonl
-agent_logs_20260407_104739.jsonl
-```
-
-### Impact
-- Manual merging required for long-term analysis
-- No built-in time-series queries
-- Difficult to correlate across time windows
-
-### Workaround
-Use external tools:
-- Merge JSONL files: `cat agent_logs_*.jsonl > all_logs.jsonl`
-- Import to database (Elasticsearch, ClickHouse)
-- Use Kinesis Data Firehose for automatic aggregation
-
----
-
-## 10. Limited Error Context
-
-### Issue
-When traces fail to capture, minimal debugging information available.
-
-### What's Missing
-- No visibility into OTEL internal errors
-- Cannot debug why content capture is disabled
-- Limited logs from Vertex AI managed runtime
-
-### Impact
-- Difficult to troubleshoot configuration issues
-- Cannot verify OTEL setup beyond initialization logs
-- Reliant on Portal26 endpoint responses (200/404)
-
----
-
-## 11. No Metrics Visualization
+## 7. No Metrics Visualization
 
 ### Issue
 No built-in visualization for captured telemetry data.
@@ -408,10 +314,6 @@ No built-in visualization for captured telemetry data.
 | .env Not Deployed | **LOW** | Manual config needed | ✓ Hardcode in agent.py |
 | Multi-line JSON | **LOW** | Parsing complexity | ✓ Custom parser |
 | Wrapper Required | **LOW** | Code complexity | ✓ AgentWrapper class |
-| Hardcoded Credentials | **HIGH** | Security risk | ⚠️ Use env vars/IAM |
-| Hardcoded Shard | **MEDIUM** | Brittle | ⚠️ Dynamic discovery |
-| No Aggregation | **MEDIUM** | Manual merging | ⚠️ External tools |
-| Limited Error Context | **MEDIUM** | Hard to debug | ❌ No |
 | No Visualization | **LOW** | Raw data only | ⚠️ External tools |
 
 ---
@@ -421,12 +323,9 @@ No built-in visualization for captured telemetry data.
 ### Immediate (Must Do)
 1. ✓ Accept content capture limitation - documented
 2. ✓ Ignore metrics 404 errors - working as expected
-3. ⚠️ Move AWS credentials to environment variables
 
 ### Short Term (Should Do)
-1. Implement dynamic shard discovery
-2. Add trace aggregation script
-3. Create basic visualization dashboard
+1. Create basic visualization dashboard
 
 ### Long Term (Nice to Have)
 1. Investigate Cloud Run direct deployment for content capture
