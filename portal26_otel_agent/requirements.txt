@@ -8,3 +8,5 @@ opentelemetry-instrumentation
 opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-google-genai
 python-dotenv
+flask
+gunicorn
