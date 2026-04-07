@@ -1,4 +1,4 @@
-# Portal26 OTEL Agent - Architecture
+# Vertex AI Reasoning Engine - OTEL Architecture
 
 ## System Overview
 

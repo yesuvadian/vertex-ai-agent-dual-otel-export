@@ -1,6 +1,6 @@
-# Portal26 OTEL Agent
+# Vertex AI Reasoning Engine - Portal26 OTEL Integration
 
-Complete OpenTelemetry integration for Google ADK agents deployed on Vertex AI, with telemetry forwarding to Portal26 OTEL collector and AWS Kinesis storage.
+Complete OpenTelemetry integration for Google ADK agents deployed on Vertex AI Reasoning Engine, with telemetry forwarding to Portal26 OTEL collector and AWS Kinesis storage.
 
 ## Overview
 

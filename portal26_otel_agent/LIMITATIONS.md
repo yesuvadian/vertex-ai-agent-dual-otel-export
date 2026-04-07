@@ -1,4 +1,4 @@
-# Portal26 OTEL Agent - Known Limitations
+# Vertex AI Reasoning Engine - Known Limitations
 
 ## Vertex AI Reasoning Engine Platform Limitations
 

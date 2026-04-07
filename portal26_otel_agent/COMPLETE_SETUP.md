@@ -1,4 +1,4 @@
-# Complete Portal26 OTEL Agent Setup
+# Vertex AI Reasoning Engine - Complete OTEL Setup
 
 ## Configuration
 

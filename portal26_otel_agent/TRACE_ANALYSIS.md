@@ -1,4 +1,4 @@
-# Portal26 OTEL Trace Analysis
+# Vertex AI Reasoning Engine - OTEL Trace Analysis
 
 ## Query: "local time new york"
 **Session ID**: 67599958119767088896  
