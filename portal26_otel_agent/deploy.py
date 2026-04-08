@@ -1,11 +1,14 @@
+#!/usr/bin/env python3
 """
-Deploy portal26_otel_agent to Vertex AI Agent Engine with full telemetry
-Uses Agent Engine API (not Reasoning Engine) to enable content capture
+Deploy portal26_otel_agent to Vertex AI Agent Engine with OpenTelemetry.
+
+Usage:
+    python3 deploy.py
 """
 import sys
 import vertexai
 from vertexai import agent_engines
-from agent import root_agent
+from portal26_agent.agent_deployed import root_agent
 import config
 import otel_config
 
@@ -15,7 +18,7 @@ LOCATION = config.GOOGLE_CLOUD_LOCATION
 
 def deploy():
     """
-    Deploy agent to Vertex AI Agent Engine with Portal26 OTEL integration
+    Deploy agent to Vertex AI Agent Engine with Portal26 OTEL integration.
     """
     print("=" * 80)
     print("DEPLOYING PORTAL26_OTEL_AGENT TO VERTEX AI AGENT ENGINE")
@@ -23,13 +26,10 @@ def deploy():
     print(f"Project: {PROJECT_ID}")
     print(f"Location: {LOCATION}")
     print(f"Model: {config.MODEL_ID}")
-    print()
-    print("🔭 Telemetry Configuration:")
-    print(f"  Service Name: {config.SERVICE_NAME}")
-    print(f"  Portal26 Endpoint: {config.OTEL_ENDPOINT}")
-    print(f"  Tenant ID: {config.TENANT_ID}")
-    print(f"  User ID: {config.USER_ID}")
-    print(f"  Content Capture: {otel_config.OTEL_CONFIG['OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT']}")
+    print(f"OTEL Endpoint: {config.OTEL_ENDPOINT}")
+    print(f"Service Name: {config.SERVICE_NAME}")
+    print(f"Tenant ID: {config.TENANT_ID}")
+    print(f"User ID: {config.USER_ID}")
     print()
 
     vertexai.init(
@@ -43,44 +43,43 @@ def deploy():
             agent_engine=root_agent,
 
             # Include the agent package
-            extra_packages=["./"],
+            extra_packages=["./portal26_agent"],
 
-            # Required packages with OTEL and VertexAI instrumentation support
+            # Required packages with OTEL support
             requirements=[
                 "google-adk>=1.17.0",
-                "opentelemetry-api",
-                "opentelemetry-sdk",
-                "opentelemetry-instrumentation",
-                "opentelemetry-exporter-otlp-proto-http",
-                "opentelemetry-instrumentation-vertexai>=2.0b0",  # Critical for content capture
                 "opentelemetry-instrumentation-google-genai>=0.4b0",
+                "opentelemetry-exporter-otlp-proto-http",
+                "opentelemetry-exporter-otlp-proto-grpc",
+                "opentelemetry-instrumentation-vertexai>=2.0b0",
             ],
 
             display_name="portal26-otel-agent",
-            description="City info agent with full Portal26 OTEL telemetry + content capture",
+            description="City info agent with Portal26 OTEL telemetry + content capture",
 
-            # CRITICAL: env_vars enables content capture via Agent Engine
+            # OpenTelemetry configuration - exports to Portal26 OTLP endpoint
             env_vars=otel_config.OTEL_CONFIG,
         )
 
         print()
         print("=" * 80)
-        print("✅ DEPLOYMENT SUCCESSFUL")
+        print("DEPLOYMENT SUCCESSFUL")
         print("=" * 80)
-        print(f"Agent Name: {root_agent.name}")
-        print(f"Resource Name: {deployed_agent.resource_name}")
-        print(f"Display Name: {deployed_agent.display_name}")
+        print(f"Resource name: {deployed_agent.resource_name}")
+        print(f"Display name: {deployed_agent.display_name}")
         print()
-        print("🔍 Telemetry Endpoints:")
+        print("Telemetry Configuration:")
+        print(f"  Service name: {config.SERVICE_NAME}")
+        print(f"  OTLP Endpoint: {config.OTEL_ENDPOINT}")
         print(f"  Traces: {config.OTEL_ENDPOINT}/v1/traces")
         print(f"  Logs: {config.OTEL_ENDPOINT}/v1/logs")
         print(f"  Metrics: {config.OTEL_ENDPOINT}/v1/metrics")
         print()
-        print("📝 Test in Console Playground:")
+        print("Test in Console Playground:")
         agent_id = deployed_agent.resource_name.split('/')[-1]
         print(f"  https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/{LOCATION}/agent-engines/{agent_id}/playground?project={PROJECT_ID}")
         print()
-        print(f"🆔 Agent ID: {agent_id}")
+        print(f"Agent ID: {agent_id}")
         print()
 
         return 0
@@ -88,7 +87,7 @@ def deploy():
     except Exception as e:
         print()
         print("=" * 80)
-        print("❌ DEPLOYMENT FAILED")
+        print("DEPLOYMENT FAILED")
         print("=" * 80)
         print(f"Error: {e}")
         print()

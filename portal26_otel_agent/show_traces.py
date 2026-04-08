@@ -4,7 +4,7 @@ Show traces from Portal26 logs (handles pretty-printed JSON)
 import json
 import re
 
-LOG_FILE = "agent_logs_20260407_125530.jsonl"
+LOG_FILE = "portal26_otel_agent_logs_20260407_125530.jsonl"
 
 print("=" * 80)
 print("ANALYZING PORTAL26 LOGS")
