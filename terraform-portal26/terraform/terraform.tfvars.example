@@ -1,0 +1,23 @@
+# Portal 26 Integration Example
+# Copy to terraform.tfvars and customize
+
+project_id = "agentic-ai-integration-490716"
+region     = "us-central1"
+
+# Portal 26 endpoint (all telemetry goes here)
+portal26_endpoint     = "https://portal26.example.com"
+portal26_service_name = "my-vertex-agents"
+
+# Agents to deploy with Portal 26 integration
+agents = {
+  "customer-support" = {
+    source_dir   = "./my_agent"  # Path to agent source code
+    display_name = "Customer Support Agent"
+  }
+
+  # Add more agents as needed
+  # "sales-assistant" = {
+  #   source_dir   = "./sales_agent"
+  #   display_name = "Sales Assistant"
+  # }
+}

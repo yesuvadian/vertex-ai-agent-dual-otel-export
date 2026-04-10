@@ -1,9 +1,18 @@
 # Secrets and credentials
 .env
+.env.DISABLED
 *.key
 *.pem
 credentials.json
 ngrok_url.txt
+
+# Telemetry data and logs (contains sensitive data)
+*.jsonl
+*_logs_*.jsonl
+kinesis_pull/
+raw_trace_data.json
+all_traces.json
+agent_comparison.json
 
 # Python
 __pycache__/

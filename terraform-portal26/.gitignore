@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+!terraform/clients/*.tfvars
+terraform/crash.log
+terraform/override.tf
+terraform/override.tf.json
+terraform/*_override.tf
+terraform/*_override.tf.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+deploy.log
+
+# Temp
+temp/
+tmp/
+*.tmp
+
+# Service Account Keys (CRITICAL - DO NOT COMMIT)
+*-key.json
+*-sa-key.json
+terraform-sa-key.json
+cicd-key.json
+*.json.key
+service-account*.json
+key.json
+sa-key.json
+
+# Environment files with secrets
+.env
+.env.*
+*.credentials
+*.secret
