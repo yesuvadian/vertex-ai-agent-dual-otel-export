@@ -60,10 +60,12 @@ print("-" * 80)
 
 total = 0
 matched = 0
+skipped = 0
 output_file = f"portal26_otel_agent_logs_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.jsonl"
 
 with open(output_file, 'w') as f:
-    for batch_num in range(20):  # Max 20 batches
+    max_batches = 20
+    for batch_num in range(max_batches):  # Max 20 batches
         response = kinesis.get_records(ShardIterator=iterator, Limit=100)
 
         records = response.get('Records', [])
@@ -88,7 +90,7 @@ with open(output_file, 'w') as f:
                 # Check for our identifiers
                 data_lower = data_str.lower()
                 if any(term in data_lower for term in ['tenant1', 'relusys', 'portal26_agent', 'portal26_otel']):
-                    f.write(json.dumps(data_json, indent=2) + '\n')
+                    f.write(json.dumps(data_json) + '\n')  # JSONL: one compact JSON per line
                     matched += 1
 
                     # Extract service name
@@ -113,10 +115,16 @@ with open(output_file, 'w') as f:
                     print(f"  [MATCH] {arrival} | Service: {service}")
 
             except Exception as e:
-                pass  # Skip malformed records
+                skipped += 1
+                # Uncomment for debugging: print(f"  [WARN] Skipped record: {e}")
 
         if not iterator:
             break
+
+    if batch_num == max_batches - 1 and iterator:
+        print()
+        print("[WARN] Reached batch limit - some records may not have been retrieved")
+        print(f"       Processed {max_batches} batches. Consider increasing time window or max_batches.")
 
 print()
 print("=" * 80)
@@ -124,6 +132,7 @@ print("SUMMARY")
 print("=" * 80)
 print(f"Total records: {total}")
 print(f"Matched records: {matched}")
+print(f"Skipped records: {skipped}")
 print(f"Output: {output_file}")
 print()
 

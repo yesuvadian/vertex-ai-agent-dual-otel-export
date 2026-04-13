@@ -1,0 +1,36 @@
+Portal26 OTEL Injection Report
+============================================================
+
+Agent: empty-portal26
+Source: ../../empty_agent_portal26
+Output: ../../empty_agent_portal26_injected
+Date: 1775821190.6722171
+
+Configuration:
+  Portal26 Endpoint: https://otel-tenant1.portal26.in:4318
+  Service Name: empty-agent-portal26
+  Tenant ID: tenant1
+  User ID: relusys_terraform
+
+Files Modified:
+  ✓ agent.py - Added 'import otel_portal26'
+  ✓ otel_portal26.py - Copied OTEL module
+  ✓ .env - Created Portal26 config
+
+Status: ✅ INJECTION COMPLETE (NOT DEPLOYED)
+
+Next Steps:
+  1. Test locally:
+     cd ../../empty_agent_portal26_injected
+     export $(cat .env | xargs)
+     python3 -c "import agent; print('OTEL loaded!')"
+
+  2. Deploy manually when ready:
+     - Via Vertex AI SDK
+     - Via gcloud CLI
+     - Via Console UI
+
+  3. Verify telemetry:
+     cd ../../portal26_otel_agent
+     python3 pull_agent_logs.py
+     grep "empty-agent-portal26" portal26_otel_agent_logs_*.jsonl

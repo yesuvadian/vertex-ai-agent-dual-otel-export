@@ -1,0 +1,134 @@
+================================================================================
+                    RELUSYS TELEMETRY PATTERN ANALYSIS
+================================================================================
+                        Data: April 10, 2026 (15:38-15:43 IST)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ACTIVITY DISTRIBUTION                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  user            ████████████████████████████████ 30.3% (37)               │
+│  aishwarya       ██████████████████████████ 26.2% (32)                     │
+│  relusys         ███████████████████ 21.3% (26) ⚠️ ALL ERRORS              │
+│  mathanraj       ████████████ 13.9% (17)                                   │
+│  kalpana         ███████ 8.2% (10)                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        RELUSYS TIMING PATTERN                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Time         Event  Interval                                             │
+│   ─────────    ─────  ────────                                             │
+│   15:38:33       1                                                          │
+│   15:38:44       2    +11.2s    ■                                          │
+│   15:38:56       3    +11.4s    ■                                          │
+│   15:39:07       4    +11.5s    ■                                          │
+│   15:39:18       5    +10.9s    ■                                          │
+│   15:39:30       6    +12.2s    ■■                                         │
+│   15:39:42       7    +11.9s    ■                                          │
+│   15:39:53       8    +11.1s    ■                                          │
+│   15:40:05       9    +11.3s    ■                                          │
+│   15:40:15      10    +10.8s    ■                                          │
+│   15:40:26      11    +10.7s    ■                                          │
+│   15:40:39      12    +13.2s    ■■■                                        │
+│   15:40:50      13    +10.5s    ■                                          │
+│   ...          ...     ...      ■                                          │
+│   15:43:25      26    +14.0s    ■■■                                        │
+│                                                                             │
+│   Average: 11.7s  │  Min: 10.5s  │  Max: 14.0s  │  StdDev: 0.87s          │
+│                                                                             │
+│   Pattern: ████████████████████  HIGHLY REGULAR                            │
+│            (Low variance = automated process, not human)                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        METADATA COMPARISON                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Team Members (claude-code)        │  Relusys (portal26_otel_agent)       │
+│  ───────────────────────────────   │  ──────────────────────────────────  │
+│  ✅ OS: darwin (macOS)              │  ❌ OS: MISSING                       │
+│  ✅ Version: 24.3.0 - 25.4.0        │  ❌ Version: MISSING                  │
+│  ✅ Arch: arm64                     │  ❌ Arch: MISSING                     │
+│  ✅ Service: claude-code            │  ✅ Service: portal26_otel_agent      │
+│  ✅ Pattern: Irregular (human)      │  ⚠️  Pattern: Regular (automated)     │
+│  ✅ Type: Normal telemetry          │  ⚠️  Type: ERROR LOGS ONLY            │
+│                                     │                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ERROR MESSAGE (100% of relusys)                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ⚠️  Failed to export metrics batch code: 404, reason: 404 page not found  │
+│                                                                             │
+│  Source: opentelemetry.exporter.otlp.proto.http.metric_exporter           │
+│  Cause:  /v1/metrics endpoint does not exist on Portal26                  │
+│  Effect: Retry every ~11 seconds, generating continuous error stream      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ACTIVITY PROJECTION                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Time Period    │  Relusys Error Logs                                      │
+│  ──────────────┼──────────────────────────────────────────────────────     │
+│  5 minutes      │  26 records                                              │
+│  1 hour         │  312 records                                             │
+│  1 day          │  7,488 records                                           │
+│  1 month        │  224,640 records                                         │
+│                                                                             │
+│  💡 This is wasting Kinesis capacity with error logs!                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        VISUAL TIMELINE (5 min)                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Legend: R=relusys  U=user  A=aishwarya  M=mathanraj  K=kalpana           │
+│                                                                             │
+│  15:38 | R U U A U R A U U A A A A U R A A U A A                          │
+│  15:39 | A A U U A A R A A U A A A A U R A A U M U A R U A U A M A U R A  │
+│  15:40 | M U U R U U M R U U M A M U U R M U M U M R M A R A              │
+│  15:41 | R R R K R K R K K R                                              │
+│  15:42 | K A R K R K K U R U U K U R M R                                  │
+│  15:43 | K M R U U U R M U M U                                            │
+│                                                                             │
+│  Observation: R's are evenly spaced (automated)                            │
+│               Others are clustered (human activity)                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CONCLUSION                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  🔍 WHAT: Automated process running portal26_otel_agent code               │
+│  ⚠️  WHY:  Metrics exporter getting 404 errors every ~12 seconds           │
+│  ❌ WHERE: Unknown (no host/OS metadata)                                   │
+│  🎯 WHO:   Most likely a team member running code locally                  │
+│                                                                             │
+│  ✅ NOT: Your Windows machine (confirmed clean)                            │
+│  ✅ NOT: Deleted Reasoning Engines (all verified deleted)                  │
+│  ✅ NOT: Normal telemetry (these are error notifications)                  │
+│                                                                             │
+│  📊 PROOF:                                                                  │
+│     • Standard deviation: 0.87s (too regular for human)                    │
+│     • 100% error logs (not normal activity)                                │
+│     • No platform metadata (minimal config)                                │
+│     • Continuous for days (not temporary test)                             │
+│                                                                             │
+│  🎯 NEXT STEP:                                                              │
+│     Ask team members: "Is anyone running portal26_otel_agent locally?"    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+              For full analysis, see: RELUSYS_SOURCE_ANALYSIS.md
+================================================================================

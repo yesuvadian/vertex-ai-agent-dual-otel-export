@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kinesis Telemetry Comparison - Before & After Endpoint Deletion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .metric-col {
+            font-weight: bold;
+            color: #333;
+        }
+        .status-good {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .status-neutral {
+            color: #2196F3;
+        }
+        .summary-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kinesis Telemetry Comparison</h1>
+        <p><strong>Verification:</strong> Endpoint Deletion Impact on Telemetry Stream</p>
+        <p><strong>Date:</strong> April 10, 2026</p>
+        
+        <h2>Before vs After Endpoint Deletion</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Before (11:00 AM)</th>
+                    <th>After (12:48 PM)</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="metric-col">Records (5 min window)</td>
+                    <td>48</td>
+                    <td>47</td>
+                    <td class="status-good">✅ Same rate</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Service Names</td>
+                    <td>portal26_otel_agent (26)<br>claude-code (22)</td>
+                    <td>portal26_otel_agent<br>claude-code</td>
+                    <td class="status-good">✅ No change</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Users Active</td>
+                    <td>relusys, pramodkr, fm, prateekgarg</td>
+                    <td>relusys, pramodkr, fm, prateekgarg</td>
+                    <td class="status-good">✅ No change</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Source Platform</td>
+                    <td>darwin (macOS) arm64</td>
+                    <td>darwin (macOS) arm64</td>
+                    <td class="status-good">✅ No change</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Latest Timestamp</td>
+                    <td>2026-04-10 11:00:00</td>
+                    <td>2026-04-10 12:48:15</td>
+                    <td class="status-good">✅ Active</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Source</td>
+                    <td>Local Mac machines</td>
+                    <td>Local Mac machines</td>
+                    <td class="status-good">✅ No change</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-box">
+            <h3 style="margin-top:0; color: #2e7d32;">✅ Conclusion</h3>
+            <ul>
+                <li><strong>Kinesis stream UNAFFECTED</strong> by endpoint deletion</li>
+                <li><strong>Telemetry still flowing</strong> from same sources (team members' local Macs)</li>
+                <li><strong>Endpoint was NOT</strong> posting to Kinesis</li>
+                <li><strong>Deletion was safe</strong> - no impact on telemetry pipeline</li>
+            </ul>
+        </div>
+
+        <h2>Detailed Breakdown</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="metric-col">Deleted Endpoint</td>
+                    <td class="status-good">✅ Removed</td>
+                    <td>portal26gcpagent (ID: 7282145225353461760)</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Endpoint Purpose</td>
+                    <td class="status-neutral">ℹ️ Info</td>
+                    <td>Model prediction endpoint (NOT telemetry exporter)</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Telemetry Source</td>
+                    <td class="status-neutral">ℹ️ Active</td>
+                    <td>Team members running code locally on Mac laptops</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Your Windows Machine</td>
+                    <td class="status-good">✅ Clean</td>
+                    <td>NOT sending telemetry - all .env files disabled</td>
+                </tr>
+                <tr>
+                    <td class="metric-col">Kinesis Stream</td>
+                    <td class="status-good">✅ Operational</td>
+                    <td>Receiving telemetry normally from local Mac sources</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Telemetry Flow (Unchanged)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Component</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="code">Local Mac Code</td>
+                    <td>Team members running portal26_otel_agent and Claude Code</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="code">OTEL SDK</td>
+                    <td>OpenTelemetry instrumentation in application code</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="code">Portal26 Endpoint</td>
+                    <td>https://otel-tenant1.portal26.in:4318</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td class="code">AWS Kinesis</td>
+                    <td>stg_otel_source_data_stream (us-east-2)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666;">
+            <strong>Report Generated:</strong> April 10, 2026 at 12:48 PM IST<br>
+            <strong>Project:</strong> agentic-ai-integration-490716<br>
+            <strong>Verification:</strong> Claude Code Analysis
+        </p>
+    </div>
+</body>
+</html>
