@@ -1,0 +1,485 @@
+[
+  {
+    "insertId": "69e5b33800016471f755a38d",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "Here are your Cloud Storage buckets:\n\n*   **project-data-bucket**:\n    *   Location: US\n    *   Size: 145.6 GB\n    *   Storage Class: STANDARD\n*   **backup-bucket**:\n    *   Location: US-CENTRAL1\n    *   Size: 2340.8 GB\n    *   Storage Class: COLDLINE\n\nIn total, you have 2 buckets with a combined size of 2486.4 GB.",
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "model"
+      },
+      "finish_reason": "STOP",
+      "index": 0
+    },
+    "labels": {
+      "event.name": "gen_ai.choice",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:43.917325742Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b338000164596831e167",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": {
+              "id": null,
+              "name": "get_storage_buckets",
+              "parts": null,
+              "response": {
+                "buckets": [
+                  {
+                    "location": "US",
+                    "name": "project-data-bucket",
+                    "size_gb": 145.6,
+                    "storage_class": "STANDARD"
+                  },
+                  {
+                    "location": "US-CENTRAL1",
+                    "name": "backup-bucket",
+                    "size_gb": 2340.8,
+                    "storage_class": "COLDLINE"
+                  }
+                ],
+                "status": "success",
+                "total_buckets": 2,
+                "total_size_gb": 2486.4
+              },
+              "scheduling": null,
+              "will_continue": null
+            },
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": null,
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "user"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.988096704Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b338000164394da80402",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": {
+              "args": {},
+              "id": null,
+              "name": "get_storage_buckets",
+              "partial_args": null,
+              "will_continue": null
+            },
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": null,
+            "thought": null,
+            "thought_signature": "CtYBAY89a19Ues38wZdBI54ptLwvIoqzwPEaVh0BqVJWK6HWElMku/+kdeldWE15X7DvcqUmUJsPagGN9+pdMWkbIGwH9SfxNayw4IDVqx53MK6sAvbeYZTHLIEr/Yg5aWlCsiLvJ53n/MTX3j0AeiTe1SJuo0Oy2/isGI+jZjONAZ6429sixGHLreW6c3+Qk/Ouo3DAXVTGl6uhSZRwaZOxsp5b3x/zvFLeY5NS8IlDr1m7b0yLpQi/avAaUPGsSl/fmet/tGZIfFQ7wTm6LpNnNimPWFjkcg==",
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "model"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.987447679Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b33800016422e7a1049e",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "list your storage",
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "user"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.986892248Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b3380001640e752122e5",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "I can help you by providing information about your Google Cloud Platform (GCP) environment. Specifically, I can:\n\n*   **Get basic project information**: This includes details like the project ID, region, and status.\n*   **List Compute Engine instances**: I can show you a list of your virtual machines, their status, machine type, and zone.\n*   **Get Cloud Storage buckets information**: I can provide details about your storage buckets, including their names, locations, sizes, and storage classes.",
+            "thought": null,
+            "thought_signature": "CtkBAY89a187eS+QF90hqSfJaCzW/5aP3scM2iQjI07zX8MqKzxYyKosdIXoTW1c8SWqVW20/GUNN5fY5HvxMW1dUeAND+E+46kkfhGA6uGURn+eliOXz5X//6ucePiFKBjh+bAOajz7q99zZA2Bnso7yRqX2C3F15phyMl6dT0KkqfH4NMtHZVGC3E6lGh7sXRe2KwZxPXTvW91QhQXJT8Q0StPePBZY78RvFuxZeAiLfXekIp/+p896MJWxjLmOFHbSwYbc+QnWOgI/NCZa06uIWqz8U2j0ui0hw==",
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "model"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.986310562Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b338000163e48bc01630",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "what you can do",
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "user"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:44.159068373Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.985763935Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b336000f120dd984d9c0",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "I can help you with the following:\n\n*   **Get basic GCP project information**: I can retrieve general details about your Google Cloud project.\n*   **List Compute Engine instances**: I can list your virtual machine instances running on Compute Engine.\n*   **Get Cloud Storage buckets information**: I can provide information about your Cloud Storage buckets.",
+            "thought": null,
+            "thought_signature": "Ct4BAY89a181YzNo9zlM9F8NLw06sIMXgYBcQSM9hnNihclrG7pDt/01ESCRtWz6w8IZu47k8YVJ0R9Rdjk2s1884+7WyeKUL9EtsxnV70eXsNgQRSSbYcAX0iDLyEbXHFU8y/+SyrsP+mQhSqk9oPVO4uR/MRY5Q6J6Sn9pyybL22MVzoXvqYFoGlzW6qt96gbuhafE589bu0AWvtnmYMJ/O9CWbeitjfgLn7ZDKBmXRYcRTqBxcdQ6aZzJAJV0OYol+JEcxcFH5lY9XrPjJWjrAS/83zEkXM8pnBF5P2Py",
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "model"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:43.161195807Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.985167322Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b336000f11f7bdb744df",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "what is your skills",
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "user"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:43.161195807Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.984618170Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b336000f11e4b993c78a",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "Okay, what would you like to try? Do you want to:\n\n*   Get information about your GCP project?\n*   List your Compute Engine instances?\n*   Check your Cloud Storage buckets?\n*   Or something else?",
+            "thought": null,
+            "thought_signature": "Ct4CAY89a18XZS6UmOKLnctAdxb0Et5kf8Isj58Fvni2ZP5At5QqV/y41DPKaYG0ZS7jp94hyw0qN8aVgJx0NTD0kSsgW0eNl2auCsJRxDPKV7DV6lGFMi2oRyvIx3qaiC66NKhhVVI4Q4w72G1GiOelUnrR0zZNK4I7s8sbGCTO+oTMs0vzGy79hL7P1ZHQayQhPmvIwJp3CU7KV8qK/q4rcHcMfaLAnmOvsf8TT8Kfe1DX9EKMNY0nEhO7EzKRX7YnzWBFsSJ/LtPnGdUYz82VVPl5Ri5Sg6fYmAkmBIEK7WEoIG6BNcwhbd9HTRWaIM5ERyMOuEDxZZYsJ9IxyURXnBndS56uKjla4Z2Ok4LJ7zSyJXvKZ1+YEAQvjoEcIjCUGwDwbU6mOso3GBwb28vKZd2NaHdbcDHK4mPy5SUqgMlc6dKca7Z1I4zd9E9LpmIPExofJiD/XwXExlA8TsM=",
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "model"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:43.161195807Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.984005026Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69e5b336000f11b1b95a8147",
+    "jsonPayload": {
+      "content": {
+        "parts": [
+          {
+            "code_execution_result": null,
+            "executable_code": null,
+            "file_data": null,
+            "function_call": null,
+            "function_response": null,
+            "inline_data": null,
+            "media_resolution": null,
+            "part_metadata": null,
+            "text": "lets try now",
+            "thought": null,
+            "thought_signature": null,
+            "tool_call": null,
+            "tool_response": null,
+            "video_metadata": null
+          }
+        ],
+        "role": "user"
+      }
+    },
+    "labels": {
+      "event.name": "gen_ai.user.message",
+      "gen_ai.system": "vertex_ai",
+      "managed-by": "reasoning-engine"
+    },
+    "logName": "projects/agentic-ai-integration-490716/logs/aiplatform.googleapis.com%2Freasoning_engine_stdout",
+    "receiveTimestamp": "2026-04-20T05:01:43.161195807Z",
+    "resource": {
+      "labels": {
+        "location": "us-central1",
+        "reasoning_engine_id": "6010661182900273152",
+        "resource_container": "961756870884"
+      },
+      "type": "aiplatform.googleapis.com/ReasoningEngine"
+    },
+    "spanId": "c0e7cf55f7c6609b",
+    "timestamp": "2026-04-20T05:01:42.983471388Z",
+    "trace": "projects/agentic-ai-integration-490716/traces/5f0b8b350891ff76691c78f38532faa7",
+    "traceSampled": true
+  }
+]

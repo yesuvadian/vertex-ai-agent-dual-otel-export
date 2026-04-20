@@ -1,0 +1,63 @@
+# Dockerfile for Multi-Destination Forwarder
+# Routes to Portal26 OTEL, AWS Kinesis, or AWS S3 based on log size
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-multi.txt requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy forwarder code
+COPY multi_destination_forwarder.py .
+
+# Create secrets directory
+RUN mkdir -p /tmp
+
+# Environment variables with defaults
+# GCP
+ENV GCP_PROJECT_ID=agentic-ai-integration-490716
+ENV PUBSUB_SUBSCRIPTION=all-customers-logs-sub
+
+# Service
+ENV OTEL_SERVICE_NAME=gcp-vertex-monitor
+ENV HEALTH_CHECK_INTERVAL=60
+ENV AGENT_TYPE=aws-ecs-multi-dest
+
+# Routing thresholds (defaults)
+ENV SMALL_LOG_THRESHOLD=102400
+ENV LARGE_LOG_THRESHOLD=1048576
+ENV HIGH_VOLUME_THRESHOLD=100
+
+# Batching (defaults)
+ENV PORTAL26_BATCH_SIZE=20
+ENV PORTAL26_BATCH_TIMEOUT=5
+ENV KINESIS_BATCH_SIZE=100
+ENV S3_BATCH_SIZE=500
+
+# AWS Region
+ENV AWS_REGION=us-east-1
+
+# Destinations (empty by default - configure via env vars)
+# ENV OTEL_EXPORTER_OTLP_ENDPOINT=
+# ENV KINESIS_STREAM_NAME=
+# ENV S3_BUCKET_NAME=
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+  CMD python -c "import sys; sys.exit(0)"
+
+# Run as non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Run the multi-destination forwarder
+CMD ["python", "-u", "multi_destination_forwarder.py"]

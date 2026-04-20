@@ -66,8 +66,43 @@ def pubsub_to_portal26(event, context):
         import traceback
         traceback.print_exc()
 
+def extract_client_info(log_entry):
+    """
+    Extract customer/client identification from log entry
+
+    Extracts:
+    - Customer project ID (from resource labels)
+    - Customer reasoning engine ID
+    - Customer location/region
+    - Custom labels (if customer tagged their engines)
+    """
+    resource = log_entry.get('resource', {})
+    resource_labels = resource.get('labels', {})
+
+    # Extract customer identifiers
+    customer_project_id = resource_labels.get('project_id', 'unknown')
+    reasoning_engine_id = resource_labels.get('reasoning_engine_id', 'unknown')
+    location = resource_labels.get('location', 'unknown')
+
+    # Check for custom client labels (if customer labeled their engines)
+    labels = log_entry.get('labels', {})
+    customer_id = labels.get('client_id') or labels.get('customer_id') or customer_project_id
+    agent_id = labels.get('agent_id') or reasoning_engine_id
+    agent_type = labels.get('agent_type', 'reasoning-engine')
+    environment = labels.get('environment', 'production')
+
+    return {
+        'customer_project_id': customer_project_id,
+        'customer_id': customer_id,
+        'reasoning_engine_id': reasoning_engine_id,
+        'agent_id': agent_id,
+        'agent_type': agent_type,
+        'location': location,
+        'environment': environment
+    }
+
 def convert_to_otel(log_entry):
-    """Convert GCP log entry to OTEL log format"""
+    """Convert GCP log entry to OTEL log format with multi-client support"""
     timestamp_ns = int(datetime.now(timezone.utc).timestamp() * 1_000_000_000)
 
     severity = log_entry.get('severity', 'INFO')
@@ -97,6 +132,20 @@ def convert_to_otel(log_entry):
         },
         "attributes": []
     }
+
+    # Extract customer information
+    client_info = extract_client_info(log_entry)
+
+    # Add customer/client identification attributes (FIRST - most important for filtering)
+    otel_log["attributes"].extend([
+        {"key": "customer.project_id", "value": {"stringValue": client_info['customer_project_id']}},
+        {"key": "customer.id", "value": {"stringValue": client_info['customer_id']}},
+        {"key": "customer.reasoning_engine_id", "value": {"stringValue": client_info['reasoning_engine_id']}},
+        {"key": "customer.agent_id", "value": {"stringValue": client_info['agent_id']}},
+        {"key": "customer.agent_type", "value": {"stringValue": client_info['agent_type']}},
+        {"key": "customer.location", "value": {"stringValue": client_info['location']}},
+        {"key": "customer.environment", "value": {"stringValue": client_info['environment']}}
+    ])
 
     # Add resource attributes
     resource_labels = resource.get('labels', {})

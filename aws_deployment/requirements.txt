@@ -1,0 +1,5 @@
+# Python dependencies for continuous forwarder
+google-cloud-pubsub==2.18.4
+google-auth==2.23.4
+requests==2.31.0
+python-dotenv==1.0.0

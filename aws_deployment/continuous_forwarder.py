@@ -1,6 +1,6 @@
 """
-Production Continuous Pull-Based Forwarder
-Runs indefinitely, pulling logs from Pub/Sub and forwarding to Portal26
+Production Continuous Pull-Based Forwarder - AWS ECS Version
+Enhanced for AWS deployment with Secrets Manager integration
 """
 import json
 import os
@@ -21,19 +21,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Handle GCP credentials from AWS Secrets Manager (passed as env var)
+if 'GOOGLE_APPLICATION_CREDENTIALS_JSON' in os.environ:
+    logger.info("Loading GCP credentials from AWS Secrets Manager...")
+    creds_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
+    with open('/tmp/gcp-creds.json', 'w') as f:
+        f.write(creds_json)
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/tmp/gcp-creds.json'
+    logger.info("GCP credentials loaded successfully")
+
 load_dotenv()
 
 # Configuration
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "agentic-ai-integration-490716")
-SUBSCRIPTION_ID = os.environ.get("PUBSUB_SUBSCRIPTION", "vertex-telemetry-subscription")
+SUBSCRIPTION_ID = os.environ.get("PUBSUB_SUBSCRIPTION", "all-customers-logs-sub")
 PORTAL26_ENDPOINT = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
 SERVICE_NAME = os.environ.get("OTEL_SERVICE_NAME", "gcp-vertex-monitor")
-BATCH_SIZE = int(os.environ.get("PORTAL26_BATCH_SIZE", "10"))
+BATCH_SIZE = int(os.environ.get("PORTAL26_BATCH_SIZE", "20"))
 BATCH_TIMEOUT = int(os.environ.get("PORTAL26_BATCH_TIMEOUT", "5"))
 OTEL_HEADERS = os.environ.get("OTEL_EXPORTER_OTLP_HEADERS", "")
 TENANT_ID = os.environ.get("PORTAL26_TENANT_ID", "")
 USER_ID = os.environ.get("PORTAL26_USER_ID", "")
-AGENT_TYPE = os.environ.get("AGENT_TYPE", "gcp-pubsub-monitor")
+AGENT_TYPE = os.environ.get("AGENT_TYPE", "aws-ecs-forwarder")
 HEALTH_CHECK_INTERVAL = int(os.environ.get("HEALTH_CHECK_INTERVAL", "60"))
 
 # Validate configuration
@@ -176,7 +185,7 @@ def send_batch_to_portal26(logs):
     # Build resource attributes
     resource_attrs = [
         {"key": "service.name", "value": {"stringValue": SERVICE_NAME}},
-        {"key": "source", "value": {"stringValue": "gcp-pubsub"}},
+        {"key": "source", "value": {"stringValue": "aws-ecs"}},
         {"key": "gcp.project", "value": {"stringValue": PROJECT_ID}}
     ]
 
@@ -191,7 +200,7 @@ def send_batch_to_portal26(logs):
         "resourceLogs": [{
             "resource": {"attributes": resource_attrs},
             "scopeLogs": [{
-                "scope": {"name": "gcp-pubsub-monitor", "version": "1.0.0"},
+                "scope": {"name": "aws-ecs-forwarder", "version": "1.0.0"},
                 "logRecords": logs
             }]
         }]
@@ -291,7 +300,7 @@ def main():
     start_time = time.time()
 
     logger.info("=" * 80)
-    logger.info("CONTINUOUS PULL-BASED FORWARDER - Production Mode")
+    logger.info("CONTINUOUS PULL-BASED FORWARDER - AWS ECS Production Mode")
     logger.info("=" * 80)
     logger.info(f"GCP Project:     {PROJECT_ID}")
     logger.info(f"Subscription:    {SUBSCRIPTION_ID}")
@@ -300,6 +309,7 @@ def main():
     logger.info(f"Tenant:          {TENANT_ID}")
     logger.info(f"Batch Size:      {BATCH_SIZE}")
     logger.info(f"Batch Timeout:   {BATCH_TIMEOUT}s")
+    logger.info(f"Agent Type:      {AGENT_TYPE}")
     logger.info("=" * 80)
 
     # Initialize Pub/Sub subscriber

@@ -1,0 +1,34 @@
+{
+  "ServiceNamespace": "ecs",
+  "ResourceId": "service/gcp-monitoring-cluster/gcp-log-forwarder-service",
+  "ScalableDimension": "ecs:service:DesiredCount",
+  "MinCapacity": 3,
+  "MaxCapacity": 10,
+  "TargetTrackingScalingPolicies": [
+    {
+      "PolicyName": "cpu-scaling-policy",
+      "PolicyType": "TargetTrackingScaling",
+      "TargetTrackingScalingPolicyConfiguration": {
+        "TargetValue": 70.0,
+        "PredefinedMetricSpecification": {
+          "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+        },
+        "ScaleInCooldown": 300,
+        "ScaleOutCooldown": 60
+      }
+    },
+    {
+      "PolicyName": "memory-scaling-policy",
+      "PolicyType": "TargetTrackingScaling",
+      "TargetTrackingScalingPolicyConfiguration": {
+        "TargetValue": 80.0,
+        "PredefinedMetricSpecification": {
+          "PredefinedMetricType": "ECSServiceAverageMemoryUtilization"
+        },
+        "ScaleInCooldown": 300,
+        "ScaleOutCooldown": 60
+      }
+    }
+  ],
+  "Description": "Auto-scaling configuration for GCP log forwarder based on CPU and memory usage. Scales from 3-10 tasks."
+}

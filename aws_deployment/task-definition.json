@@ -1,0 +1,83 @@
+{
+  "family": "gcp-log-forwarder",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT:role/gcp-forwarder-task-role",
+  "containerDefinitions": [
+    {
+      "name": "forwarder",
+      "image": "YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/gcp-log-forwarder:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gcp-log-forwarder",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "forwarder"
+        }
+      },
+      "environment": [
+        {
+          "name": "GCP_PROJECT_ID",
+          "value": "agentic-ai-integration-490716"
+        },
+        {
+          "name": "PUBSUB_SUBSCRIPTION",
+          "value": "all-customers-logs-sub"
+        },
+        {
+          "name": "OTEL_SERVICE_NAME",
+          "value": "gcp-vertex-monitor"
+        },
+        {
+          "name": "PORTAL26_BATCH_SIZE",
+          "value": "20"
+        },
+        {
+          "name": "PORTAL26_BATCH_TIMEOUT",
+          "value": "5"
+        },
+        {
+          "name": "HEALTH_CHECK_INTERVAL",
+          "value": "60"
+        },
+        {
+          "name": "AGENT_TYPE",
+          "value": "aws-ecs-forwarder"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "GOOGLE_APPLICATION_CREDENTIALS_JSON",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT:secret:gcp-service-account-json"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT:secret:portal26-endpoint"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_HEADERS",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT:secret:portal26-auth-header"
+        },
+        {
+          "name": "PORTAL26_TENANT_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT:secret:portal26-tenant-id"
+        },
+        {
+          "name": "PORTAL26_USER_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_AWS_ACCOUNT:secret:portal26-user-id"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c 'import sys; sys.exit(0)' || exit 1"],
+        "interval": 60,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}
