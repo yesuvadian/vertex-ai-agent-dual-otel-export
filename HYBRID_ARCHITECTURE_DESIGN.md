@@ -169,97 +169,6 @@ graph TB
 2. **Secrets in Logs**: Never log API keys or secrets. If accidentally logged, they will be collected. Rotate secrets immediately and contact Portal26 to purge.
 3. **Scope**: Only logs/traces from `aiplatform.googleapis.com/ReasoningEngine` are collected - nothing else from your GCP project.
 
-### Data Security & Privacy
-
-**Encryption:**
-- ✅ **In Transit**: TLS 1.3 for all API calls (GCP APIs, OTLP forwarding)
-- ✅ **At Rest**: AES-256 encryption in Portal26 storage
-
-**Access Controls:**
-- ✅ Role-based access control (RBAC) in Portal26 dashboard
-- ✅ Your data isolated from other customers (multi-tenant architecture)
-- ✅ Audit logs of who accessed your data
-
-**Compliance:**
-- SOC 2 Type II: [Status: In Progress / Certified]
-- GDPR Compliant: Yes
-- Data Residency: AWS [US-EAST-1 / EU-WEST-1] (configurable)
-- Data Retention: 90 days default (configurable: 30-365 days)
-
-**Your Rights:**
-- ✅ Data deletion on request (within 30 days)
-- ✅ Data export in OTLP/JSON format
-- ✅ Opt-out anytime by removing IAM permissions
-- ✅ Data Processing Agreement (DPA) available
-
-### Security & Compliance Matrix
-
-**Security controls and compliance features:**
-
-| Security Control | Status | Details |
-|------------------|--------|---------|
-| **Data Protection** |
-| Encryption in transit | ✅ Enabled | TLS 1.3 for all API calls |
-| Encryption at rest | ✅ Enabled | AES-256 encryption |
-| PII redaction | ✅ Available | Configurable regex/ML-based |
-| Data masking | ✅ Available | Mask sensitive fields |
-| Data retention controls | ✅ Available | 30-365 days configurable |
-| Data deletion (right to erasure) | ✅ Available | Within 30 days of request |
-| Data export (portability) | ✅ Available | OTLP/JSON formats |
-| **Access Control** |
-| Multi-factor authentication (MFA) | ✅ Required | For Portal26 dashboard |
-| Role-based access control (RBAC) | ✅ Enabled | Admin, Viewer, Analyst roles |
-| Single Sign-On (SSO) | ✅ Available | SAML 2.0, OAuth 2.0 |
-| IP allowlisting | ✅ Available | Restrict dashboard access |
-| API key rotation | ✅ Automated | 90-day rotation |
-| Audit logging | ✅ Enabled | Who accessed what, when |
-| **Network Security** |
-| VPC peering | ❌ Not required | Uses public GCP APIs |
-| Private endpoints | ⚠️ Optional | Available for enterprise |
-| DDoS protection | ✅ Enabled | AWS Shield Standard |
-| WAF (Web Application Firewall) | ✅ Enabled | AWS WAF |
-| **Compliance Certifications** |
-| SOC 2 Type II | ⚠️ In Progress | Expected Q3 2026 |
-| ISO 27001 | ⚠️ Planned | Expected Q4 2026 |
-| GDPR compliance | ✅ Compliant | DPA available |
-| CCPA compliance | ✅ Compliant | CA privacy rights |
-| HIPAA BAA | ⚠️ Available | Enterprise plan only |
-| FedRAMP | ❌ Not certified | Planned for 2027 |
-| **Vulnerability Management** |
-| Penetration testing | ✅ Annual | Third-party conducted |
-| Vulnerability scanning | ✅ Continuous | Automated tools |
-| Dependency scanning | ✅ Continuous | GitHub/Snyk |
-| Security patching | ✅ < 7 days | Critical patches < 24h |
-| **Incident Response** |
-| Security incident response plan | ✅ Documented | 24/7 on-call team |
-| Breach notification | ✅ < 72 hours | Per GDPR requirements |
-| Incident communication | ✅ Established | Email + status page |
-| Post-incident review | ✅ Standard | RCA shared with customers |
-| **Monitoring & Logging** |
-| Security monitoring (SIEM) | ✅ Enabled | 24/7 monitoring |
-| Anomaly detection | ✅ Enabled | ML-based |
-| Alerting | ✅ Enabled | PagerDuty integration |
-| Log retention (security logs) | ✅ 1 year | Immutable storage |
-
-**Legend:**
-- ✅ = Fully implemented and available
-- ⚠️ = Partial/conditional availability (see details)
-- ❌ = Not currently available
-
-### Compliance Requirements by Industry
-
-**Which compliance features you need based on your industry:**
-
-| Your Industry | Must Have | Recommended | Optional |
-|---------------|-----------|-------------|----------|
-| **Healthcare** | HIPAA BAA, Encryption at rest/transit, Audit logging | PII redaction, Data retention ≤ 6 years | Private endpoints |
-| **Financial Services** | SOC 2, Encryption, MFA, RBAC | IP allowlisting, SSO, Anomaly detection | ISO 27001 |
-| **Government** | FedRAMP (if applicable), Encryption | Data residency controls, Private endpoints | Dedicated tenant |
-| **E-commerce** | GDPR/CCPA, Data deletion, Encryption | PII redaction, Data export | SOC 2 |
-| **SaaS/Technology** | SOC 2, Encryption, RBAC | SSO, Audit logging, Data retention | ISO 27001 |
-| **Education** | FERPA, Encryption | Data deletion, Access controls | PII redaction |
-| **General Enterprise** | Encryption, MFA, RBAC | SOC 2, Audit logging | All others |
-
 ### Why Does Portal26 Need Access to My GCP Project?
 
 **The Problem Portal26 Solves:**
@@ -1183,6 +1092,549 @@ services:
       - ./otel-config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
 ```
+
+---
+
+## Data Retention Policies
+
+### Overview
+
+Portal26 collects observability data from your GCP Vertex AI Agent Engine and stores it across multiple systems. Understanding retention policies helps you:
+- ✅ **Comply with regulations** (GDPR, HIPAA, SOC2)
+- ✅ **Manage costs** (longer retention = higher storage costs)
+- ✅ **Plan capacity** (disk space, API quotas)
+- ✅ **Meet audit requirements** (7-year retention for some industries)
+
+**Key Principle:** Retention is configured at the **GCP project level**, not per-agent, unless you create separate infrastructure for each agent.
+
+---
+
+### Retention Scope Summary
+
+| Component | Default Retention | Configurable? | Scope Level | Configuration Effort |
+|-----------|-------------------|---------------|-------------|---------------------|
+| **Cloud Logging** | 30 days | ✅ Yes (1-3650 days) | Project-level | Low |
+| **Cloud Trace** | 30 days | ❌ No (fixed) | Project-level | N/A (export required) |
+| **Pub/Sub Messages** | 7 days | ✅ Yes (max 31 days) | Topic-level | Very Low |
+| **Portal26 Platform** | 90 days (default) | ✅ Yes | Tenant-level | Contact Portal26 |
+| **Local Archive** | 7 days (default) | ✅ Yes | Application-level | Very Low |
+
+---
+
+### 1. Cloud Logging Retention (Customer GCP Project)
+
+**What:** Logs containing LLM prompts, responses, agent execution details
+
+**Default:** 30 days in `_Default` log bucket
+
+**Configurable Range:** 1 to 3650 days (10 years)
+
+#### Configuration Steps
+
+**Option A: Update Default Bucket (affects ALL logs in project)**
+
+```bash
+# Check current retention
+gcloud logging buckets describe _Default \
+  --location=global \
+  --project={customer_project}
+
+# Update retention to 90 days
+gcloud logging buckets update _Default \
+  --location=global \
+  --retention-days=90 \
+  --project={customer_project}
+```
+
+**Option B: Create Custom Log Bucket (recommended for isolation)**
+
+```bash
+# Step 1: Create bucket with custom retention
+gcloud logging buckets create vertex-ai-logs \
+  --location=us-central1 \
+  --retention-days=180 \
+  --description="Vertex AI Agent logs with 180-day retention" \
+  --project={customer_project}
+
+# Step 2: Create sink to route AI agent logs to this bucket
+gcloud logging sinks create vertex-ai-sink \
+  logging.googleapis.com/projects/{customer_project}/locations/us-central1/buckets/vertex-ai-logs \
+  --log-filter='resource.type="aiplatform.googleapis.com/ReasoningEngine"' \
+  --project={customer_project}
+
+# Step 3: Verify
+gcloud logging buckets describe vertex-ai-logs \
+  --location=us-central1 \
+  --project={customer_project}
+```
+
+**Option C: Agent-Specific Retention (separate bucket per agent)**
+
+```bash
+# Agent 1: 30-day retention
+gcloud logging buckets create agent1-logs \
+  --location=us-central1 \
+  --retention-days=30 \
+  --project={customer_project}
+
+gcloud logging sinks create agent1-sink \
+  logging.googleapis.com/projects/{customer_project}/locations/us-central1/buckets/agent1-logs \
+  --log-filter='resource.type="aiplatform.googleapis.com/ReasoningEngine" AND resource.labels.reasoning_engine_id="{agent1_id}"' \
+  --project={customer_project}
+
+# Agent 2: 180-day retention
+gcloud logging buckets create agent2-logs \
+  --location=us-central1 \
+  --retention-days=180 \
+  --project={customer_project}
+
+gcloud logging sinks create agent2-sink \
+  logging.googleapis.com/projects/{customer_project}/locations/us-central1/buckets/agent2-logs \
+  --log-filter='resource.type="aiplatform.googleapis.com/ReasoningEngine" AND resource.labels.reasoning_engine_id="{agent2_id}"' \
+  --project={customer_project}
+```
+
+#### Locking Retention Policy (Compliance)
+
+For regulated industries requiring immutable retention:
+
+```bash
+# WARNING: This is PERMANENT and cannot be undone
+gcloud logging buckets update vertex-ai-logs \
+  --location=us-central1 \
+  --locked \
+  --project={customer_project}
+```
+
+Once locked, you **cannot**:
+- ❌ Reduce retention period
+- ❌ Delete the bucket
+- ❌ Delete logs before retention expires
+
+**Use cases for locking:**
+- HIPAA compliance (minimum 6 years)
+- SOC2 audit requirements (7 years)
+- Legal hold requirements
+
+#### Cost Implications
+
+**Pricing:** $0.50/GB per month (first 50GB/month free per project)
+
+**Example:**
+- 1000 agent executions/day
+- ~10KB per log entry
+- ~10 MB/day = 300 MB/month
+- **Cost:** ~$0.15/month (within free tier)
+
+**At scale:**
+- 100,000 executions/day
+- ~30 GB/month
+- **Cost:** ~$15/month
+
+---
+
+### 2. Cloud Trace Retention (Customer GCP Project)
+
+**What:** Trace structure, span timing, relationships
+
+**Default:** 30 days (FIXED - cannot be changed)
+
+**Configurable?** ❌ No - Cloud Trace has fixed 30-day retention
+
+#### How to Keep Traces Longer Than 30 Days
+
+Since Cloud Trace retention is fixed, you must **export** traces to another storage system:
+
+**Option A: Export to Cloud Storage (Recommended for archival)**
+
+```bash
+# Step 1: Create GCS bucket
+gsutil mb -l us-central1 gs://{customer_project}-trace-archive
+
+# Step 2: Set lifecycle policy for cost optimization
+cat > lifecycle.json <<EOF
+{
+  "lifecycle": {
+    "rule": [
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "NEARLINE"},
+        "condition": {"age": 30}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "COLDLINE"},
+        "condition": {"age": 90}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "ARCHIVE"},
+        "condition": {"age": 365}
+      },
+      {
+        "action": {"type": "Delete"},
+        "condition": {"age": 2555}
+      }
+    ]
+  }
+}
+EOF
+
+gsutil lifecycle set lifecycle.json gs://{customer_project}-trace-archive
+
+# Step 3: Create log sink to export traces
+gcloud logging sinks create trace-export \
+  storage.googleapis.com/{customer_project}-trace-archive \
+  --log-filter='resource.type="aiplatform.googleapis.com/ReasoningEngine" AND trace IS NOT NULL' \
+  --project={customer_project}
+```
+
+**Storage Class Pricing:**
+- **Standard:** $0.020/GB/month (0-30 days)
+- **Nearline:** $0.010/GB/month (30-90 days)
+- **Coldline:** $0.004/GB/month (90-365 days)
+- **Archive:** $0.0012/GB/month (365+ days)
+
+**Cost Example (1000 traces/day):**
+- Year 1: ~90 MB/day × 30 days × $0.020 = $54/year
+- Year 2: ~2.7 GB × $0.0012 = $3.24/year (Archive storage)
+
+**Option B: Export to BigQuery (Recommended for analysis)**
+
+```bash
+# Step 1: Create BigQuery dataset
+bq mk --dataset \
+  --location=us-central1 \
+  --description="Vertex AI traces for analysis" \
+  {customer_project}:vertex_ai_traces
+
+# Step 2: Create log sink
+gcloud logging sinks create trace-to-bigquery \
+  bigquery.googleapis.com/projects/{customer_project}/datasets/vertex_ai_traces \
+  --log-filter='resource.type="aiplatform.googleapis.com/ReasoningEngine" AND trace IS NOT NULL' \
+  --project={customer_project}
+
+# Step 3: Set table expiration (optional)
+bq update --default_table_expiration 15552000 {customer_project}:vertex_ai_traces  # 180 days
+```
+
+**BigQuery Pricing:**
+- **Storage:** $0.02/GB per month (first 10GB free)
+- **Queries:** $5 per TB scanned
+- **Streaming inserts:** $0.05 per 200 MB
+
+---
+
+### 3. Pub/Sub Message Retention (Customer GCP Project)
+
+**What:** Log entry notifications that trigger Portal26 collection
+
+**Default:** 7 days
+
+**Configurable Range:** 10 minutes to 31 days
+
+**Why it matters:** If Portal26's collector service is down, messages are retained in Pub/Sub for reprocessing when service recovers.
+
+#### Configuration
+
+```bash
+# Update message retention to 30 days
+gcloud pubsub topics update {topic_name} \
+  --message-retention-duration=2592000s \
+  --project={customer_project}
+
+# Verify
+gcloud pubsub topics describe {topic_name} \
+  --project={customer_project}
+```
+
+**Recommended Settings:**
+- **Development:** 7 days (259200s) - default is fine
+- **Production:** 30 days (2592000s) - maximum safety
+
+**Cost:** $0.05/GB per month (very minimal - notifications are <1KB each)
+
+---
+
+### 4. Portal26 Platform Retention
+
+**What:** Enriched observability data in Portal26's OTEL Collector and governance dashboard
+
+**Default:** 90 days
+
+**Configurable?** ✅ Yes - contact Portal26 to adjust
+
+**How to Configure:**
+1. Log into Portal26 dashboard
+2. Navigate to **Settings** → **Data Retention**
+3. Select retention period for your tenant
+4. Confirm changes
+
+**Available Retention Tiers:**
+- **Standard:** 90 days (included in base plan)
+- **Extended:** 180 days (additional cost)
+- **Compliance:** 365+ days (enterprise plan)
+- **Archive:** 7 years (compliance/SOC2 plan)
+
+**What happens after retention expires:**
+- Data is **permanently deleted** from Portal26 platform
+- No recovery possible after deletion
+- You still have data in your GCP project (if exported)
+
+**Cost Implications:**
+- Included in Portal26 subscription
+- Extended retention may incur additional fees
+- Check your Portal26 contract for details
+
+---
+
+### 5. Local Archive Retention (Portal26 Collector Service)
+
+**What:** Traces stored locally by the Portal26 collector service running in AWS
+
+**Default:** 7 days (configured in collector service)
+
+**Configurable?** ✅ Yes - via environment variable
+
+**Purpose:**
+- Debug trace transformation issues
+- Audit trail of processing
+- Replay failed exports
+
+**Configuration:**
+
+Portal26 manages this - typical configuration:
+```bash
+# In collector service .env
+ENABLE_TRACE_STORAGE=true
+TRACE_ARCHIVE_PATH=/var/trace_archive
+TRACE_ARCHIVE_RETENTION_DAYS=7
+```
+
+**Storage Usage:**
+- ~30-90 KB per trace
+- 1000 traces/day × 7 days × 90 KB = ~630 MB
+- Negligible cost impact
+
+**Cleanup:** Automated daily cleanup of files older than retention period
+
+---
+
+### Retention Strategy by Use Case
+
+#### Development/Testing Environment
+```yaml
+Cloud Logging: 30 days (use default bucket)
+Cloud Trace: 30 days (no export needed)
+Pub/Sub: 7 days (default)
+Portal26: 30 days
+Local Archive: 7 days
+Estimated Cost: ~$0 (within free tier)
+```
+
+#### Production Environment
+```yaml
+Cloud Logging: 90 days (custom bucket)
+Cloud Trace: Export to GCS → 365 days
+Pub/Sub: 30 days
+Portal26: 90 days
+Local Archive: 30 days
+Estimated Cost: ~$20-50/month (depends on volume)
+```
+
+#### Compliance/Regulated Industries
+```yaml
+Cloud Logging: 2555 days (7 years, locked)
+Cloud Trace: Export to GCS → 2555 days
+Pub/Sub: 30 days
+Portal26: 2555 days (archive tier)
+Local Archive: 90 days
+Estimated Cost: ~$100-300/month (depends on volume)
+```
+
+---
+
+### Compliance Requirements Reference
+
+| Regulation | Minimum Retention | Recommended GCP Config |
+|------------|-------------------|------------------------|
+| **GDPR** | No minimum (deletion on request required) | 90 days + deletion automation |
+| **HIPAA** | 6 years | `--retention-days=2190 --locked` |
+| **SOC2** | 7 years (audit logs) | `--retention-days=2555 --locked` |
+| **PCI-DSS** | 3 months (minimum), 1 year (recommended) | `--retention-days=365` |
+| **FINRA** | 3-6 years (varies) | `--retention-days=2190` |
+| **ISO 27001** | Defined by organization | Typically 365-2555 days |
+
+**GDPR Note:** While GDPR doesn't mandate minimum retention, it requires:
+- ✅ Ability to delete user data on request
+- ✅ Data retention documented in privacy policy
+- ✅ Automatic deletion when no longer needed
+
+To implement GDPR-compliant deletion:
+```bash
+# Delete logs for specific user/session
+gcloud logging logs delete {log_id} \
+  --log-filter='labels.user_id="{user_id}"' \
+  --project={customer_project}
+```
+
+---
+
+### Monitoring Retention Health
+
+#### Check Current Retention Settings
+
+```bash
+# Cloud Logging buckets
+gcloud logging buckets list \
+  --location=us-central1 \
+  --project={customer_project} \
+  --format="table(name,retentionDays,locked)"
+
+# Pub/Sub topics
+gcloud pubsub topics describe {topic_name} \
+  --project={customer_project} \
+  --format="get(messageRetentionDuration)"
+
+# GCS lifecycle policies
+gsutil lifecycle get gs://{customer_project}-trace-archive
+```
+
+#### Set Up Alerts for Retention Issues
+
+**Alert 1: Log bucket approaching quota**
+```yaml
+# Create alert policy in Cloud Monitoring
+condition:
+  displayName: "Log bucket > 80% of quota"
+  conditionThreshold:
+    filter: resource.type="logging_bucket" AND metric.type="logging.googleapis.com/bucket/byte_count"
+    comparison: COMPARISON_GT
+    thresholdValue: 80
+    duration: 300s
+```
+
+**Alert 2: Pub/Sub unacknowledged messages (collector down)**
+```yaml
+condition:
+  displayName: "Pub/Sub messages not being processed"
+  conditionThreshold:
+    filter: resource.type="pubsub_subscription" AND metric.type="pubsub.googleapis.com/subscription/num_unacked_messages_by_region"
+    comparison: COMPARISON_GT
+    thresholdValue: 100
+    duration: 600s
+```
+
+---
+
+### Cost Optimization Tips
+
+1. **Use lifecycle policies** on Cloud Storage exports
+   - Move to Nearline after 30 days (50% cost reduction)
+   - Move to Coldline after 90 days (80% cost reduction)
+   - Move to Archive after 1 year (94% cost reduction)
+
+2. **Export only necessary data**
+   - Filter logs to exclude debug/verbose logs
+   - Export only ERROR and WARNING severity for long-term storage
+
+3. **Use appropriate retention periods**
+   - Don't store dev/test data for years
+   - Separate production and non-production buckets
+
+4. **Compress exports**
+   ```bash
+   # GCS automatically compresses certain file types
+   # Traces export as JSON - ensure gzip compression
+   gsutil -m -o "GSUtil:parallel_composite_upload_threshold=150M" cp -Z *.json gs://bucket/
+   ```
+
+5. **Review retention quarterly**
+   - Adjust based on actual compliance needs
+   - Remove expired data promptly
+
+---
+
+### Troubleshooting Retention Issues
+
+#### Issue: Logs disappearing before retention period
+
+**Diagnosis:**
+```bash
+# Check if logs are being routed to correct bucket
+gcloud logging sinks list --project={customer_project}
+
+# Check bucket retention
+gcloud logging buckets describe {bucket_name} \
+  --location=us-central1 \
+  --project={customer_project}
+```
+
+**Common causes:**
+- Logs routed to `_Default` bucket with 30-day retention
+- Sink filter too restrictive (logs don't match filter)
+- Bucket retention recently reduced
+
+---
+
+#### Issue: Cannot reduce retention period
+
+**Error:** `Retention period cannot be reduced`
+
+**Cause:** Bucket has locked retention policy
+
+**Resolution:**
+- Locked retention **cannot be unlocked** (by design)
+- Create a new bucket with different retention
+- Update sinks to point to new bucket
+- Keep old bucket until data expires
+
+---
+
+#### Issue: High storage costs
+
+**Diagnosis:**
+```bash
+# Check log volume
+gcloud logging read 'resource.type="aiplatform.googleapis.com/ReasoningEngine"' \
+  --limit=1000 \
+  --format=json \
+  --project={customer_project} | wc -c
+
+# Check bucket size (via Cloud Monitoring)
+# Navigate to Cloud Monitoring → Metrics Explorer
+# Metric: logging.googleapis.com/bucket/byte_count
+```
+
+**Solutions:**
+1. Reduce retention period if not required
+2. Filter out verbose/debug logs from long-term storage
+3. Use lifecycle policies to move to cheaper storage classes
+4. Export to BigQuery and use partitioned tables with expiration
+
+---
+
+### Summary Checklist
+
+**Initial Setup:**
+- [ ] Determine retention requirements (compliance, audit, operational)
+- [ ] Create custom log buckets with appropriate retention
+- [ ] Set up log sinks to route AI agent logs to custom buckets
+- [ ] Configure Pub/Sub message retention (30 days for production)
+- [ ] Set up Cloud Storage export for traces (if >30 days needed)
+- [ ] Configure lifecycle policies on GCS buckets
+- [ ] Document retention policy in company's data governance policy
+- [ ] Set up monitoring alerts for retention issues
+
+**Quarterly Review:**
+- [ ] Audit actual retention vs. requirements
+- [ ] Review storage costs and optimize
+- [ ] Verify compliance with regulations
+- [ ] Test data deletion procedures (GDPR)
+- [ ] Update retention policies if regulations change
+
+**For Compliance Audits:**
+- [ ] Document retention configuration
+- [ ] Show locked retention policies (if applicable)
+- [ ] Demonstrate audit trail (who changed retention when)
+- [ ] Prove deletion capabilities (GDPR right to erasure)
 
 ---
 

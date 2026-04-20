@@ -1,0 +1,20 @@
+[Unit]
+Description=Vertex AI Pub/Sub Continuous Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=your-user
+WorkingDirectory=/path/to/ai_agent_projectgcp
+Environment="PATH=/usr/bin:/usr/local/bin"
+Environment="GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json"
+Environment="GCP_PROJECT_ID=agentic-ai-integration-490716"
+Environment="LOG_DIR=/var/log/pubsub-monitor"
+ExecStart=/usr/bin/python3 monitoring_setup/monitor_pubsub_continuous.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
