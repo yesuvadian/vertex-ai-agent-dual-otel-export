@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reasoning Engine Test UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        .info {
+            background: #e8f0fe;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            font-family: monospace;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1557b0;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #1a73e8;
+        }
+        .error {
+            border-left-color: #d93025;
+            background: #fce8e6;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .command {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Reasoning Engine Test UI</h1>
+
+        <div class="info">
+            <strong>Engine:</strong> monitoring-agent-with-logs<br>
+            <strong>ID:</strong> 8019460130754002944<br>
+            <strong>Note:</strong> This HTML form generates Python code to run locally
+        </div>
+
+        <label for="message">Your Message:</label>
+        <textarea id="message" placeholder="Enter your test message (e.g., 'ERROR in database connection')">Test message with ERROR in database</textarea>
+
+        <label for="messageId">Message ID:</label>
+        <input type="text" id="messageId" value="ui-test-001" placeholder="Optional message ID">
+
+        <button onclick="generateCode()">Generate Python Code</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function generateCode() {
+            const message = document.getElementById('message').value;
+            const messageId = document.getElementById('messageId').value || 'test-001';
+
+            if (!message) {
+                showResult('Please enter a message', true);
+                return;
+            }
+
+            // Generate Python code
+            const pythonCode = `# Run this in Cloud Shell or local terminal
+import vertexai
+from vertexai.preview import reasoning_engines
+import base64
+
+vertexai.init(
+    project="agentic-ai-integration-490716",
+    location="us-central1",
+    staging_bucket="gs://agentic-ai-integration-490716-reasoning-engine"
+)
+
+# Load engine
+engine = reasoning_engines.ReasoningEngine(
+    "projects/961756870884/locations/us-central1/reasoningEngines/8019460130754002944"
+)
+
+# Your message
+message = """${message}"""
+encoded = base64.b64encode(message.encode()).decode()
+
+# Query engine
+result = engine.query(
+    message={
+        "data": encoded,
+        "messageId": "${messageId}",
+        "publishTime": "2026-04-21T12:00:00Z"
+    }
+)
+
+# Print result
+import json
+print(json.dumps(result, indent=2))`;
+
+            const html = `
+                <div class="result">
+                    <h3>✅ Python Code Generated</h3>
+                    <p><strong>Instructions:</strong></p>
+                    <ol>
+                        <li>Copy the code below</li>
+                        <li>Open Cloud Shell in GCP Console:
+                            <a href="https://console.cloud.google.com/?cloudshell=true" target="_blank">Open Cloud Shell</a>
+                        </li>
+                        <li>Paste and run the code</li>
+                        <li>Check AWS Lambda logs after 1-2 minutes</li>
+                    </ol>
+
+                    <div class="command">${escapeHtml(pythonCode)}</div>
+
+                    <button onclick="copyCode()">📋 Copy Code</button>
+
+                    <p style="margin-top: 15px;"><strong>Or save to file:</strong></p>
+                    <div class="command">python3 > test_prompt.py << 'EOF'
+${escapeHtml(pythonCode)}
+EOF
+
+python3 test_prompt.py</div>
+                </div>
+            `;
+
+            document.getElementById('result').innerHTML = html;
+
+            // Store code for copying
+            window.generatedCode = pythonCode;
+        }
+
+        function copyCode() {
+            if (!window.generatedCode) return;
+
+            navigator.clipboard.writeText(window.generatedCode).then(() => {
+                alert('✅ Code copied to clipboard!');
+            }).catch(() => {
+                alert('Please manually copy the code');
+            });
+        }
+
+        function showResult(message, isError = false) {
+            const html = `<div class="result ${isError ? 'error' : ''}">${message}</div>`;
+            document.getElementById('result').innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
