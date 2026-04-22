@@ -1,0 +1,74 @@
+============================================================
+Lambda with OIDC Authentication
+============================================================
+Generated: 2026-04-22
+
+Function Name: gcp-pubsub-oidc
+Function ARN: arn:aws:lambda:us-east-1:473550159910:function:gcp-pubsub-oidc
+Region: us-east-1
+Runtime: Python 3.11
+Memory: 256 MB
+
+Function URL: https://gd2ohh3wa7dgenayxkkwq2ht6a0jacor.lambda-url.us-east-1.on.aws/
+
+Auth Type: OIDC (Google Cloud JWT tokens)
+Expected Issuer: https://accounts.google.com
+Expected Audience: <Lambda Function URL>
+
+============================================================
+Step 1: Create Function URL
+============================================================
+
+1. Go to AWS Console:
+   https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/gcp-pubsub-oidc
+
+2. Click "Configuration" tab → "Function URL"
+
+3. Click "Create function URL"
+   - Auth type: NONE
+   - Click "Save"
+
+4. Copy the Function URL
+
+5. Update this file with the URL
+
+============================================================
+Step 2: Update Lambda Environment Variable
+============================================================
+
+After getting the Function URL, run:
+
+aws lambda update-function-configuration \
+  --function-name gcp-pubsub-oidc \
+  --environment Variables="{LAMBDA_URL=<YOUR_FUNCTION_URL>}" \
+  --region us-east-1
+
+This sets the expected JWT audience to your Lambda URL.
+
+============================================================
+Step 3: Create GCP Service Account
+============================================================
+
+Run: bash setup_gcp_oidc.sh
+
+This creates:
+- GCP service account for OIDC authentication
+- Grants permissions
+- Configures Pub/Sub subscription with OIDC
+
+============================================================
+Step 4: Test End-to-End
+============================================================
+
+python test_local.py
+
+Wait 1-2 minutes, then check Lambda logs:
+
+MSYS_NO_PATHCONV=1 aws logs tail /aws/lambda/gcp-pubsub-oidc --since 5m --region us-east-1
+
+Expected output:
+[OK] JWT token validated successfully
+[OK] Message Data: [AGENT] Query called...
+[OK] Message processed successfully
+
+============================================================
