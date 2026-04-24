@@ -18,8 +18,8 @@ terraform/
 │
 ├── main.tf             ← Run this SECOND (main infrastructure)
 ├── gcp_log_sink_pubsub.tf
-├── aws_lambda_multi_customer.tf
-└── ...
+├── terraform.tfvars.example
+└── README.md
 ```
 
 ---
@@ -133,16 +133,15 @@ resource "google_service_account" "terraform_deployer"
 - **ID:** `terraform-deployer`
 - **Email:** `terraform-deployer@PROJECT_ID.iam.gserviceaccount.com`
 
-### **IAM Bindings (6 roles)**
+### **IAM Bindings (5 roles)**
 ```hcl
 resource "google_project_iam_member"
 ```
-- `roles/logging.admin`
-- `roles/pubsub.admin`
-- `roles/iam.serviceAccountAdmin`
-- `roles/iam.serviceAccountUser`
-- `roles/secretmanager.admin`
-- `roles/resourcemanager.projectIamAdmin`
+- `roles/logging.admin` - Create log sinks
+- `roles/pubsub.admin` - Create Pub/Sub topics/subscriptions
+- `roles/iam.serviceAccountAdmin` - Create OIDC service account
+- `roles/iam.serviceAccountUser` - Use service accounts
+- `roles/resourcemanager.projectIamAdmin` - Grant IAM permissions
 
 ### **Service Account Key**
 ```hcl
@@ -481,4 +480,4 @@ cd .. && terraform apply
 
 **Purpose:** Automate GCP service account creation via Terraform  
 **Use Case:** CI/CD pipelines, team environments, repeatable deployments  
-**Alternative:** Manual Console setup (see GCP_SERVICE_ACCOUNT_SETUP.md)
+**Next Step:** See README.md for main infrastructure deployment

@@ -91,14 +91,7 @@ resource "google_project_iam_member" "service_account_user" {
   member  = "serviceAccount:${google_service_account.terraform_deployer.email}"
 }
 
-# 5. Secret Manager Admin - Manage secrets
-resource "google_project_iam_member" "secret_manager_admin" {
-  project = var.gcp_project_id
-  role    = "roles/secretmanager.admin"
-  member  = "serviceAccount:${google_service_account.terraform_deployer.email}"
-}
-
-# 6. Project IAM Admin - Grant IAM permissions
+# 5. Project IAM Admin - Grant IAM permissions
 resource "google_project_iam_member" "project_iam_admin" {
   project = var.gcp_project_id
   role    = "roles/resourcemanager.projectIamAdmin"
@@ -181,7 +174,6 @@ output "roles_granted" {
     "roles/pubsub.admin",
     "roles/iam.serviceAccountAdmin",
     "roles/iam.serviceAccountUser",
-    "roles/secretmanager.admin",
     "roles/resourcemanager.projectIamAdmin"
   ]
 }
