@@ -1,0 +1,68 @@
+# ============================================================================
+# Terraform Variables - No OIDC Authentication
+# ============================================================================
+# WARNING: This configuration does NOT use OIDC authentication
+# Lambda URL is public and accepts all requests - use for testing only!
+# ============================================================================
+
+# ============================================================================
+# GCP Configuration
+# ============================================================================
+gcp_project_id = "agentic-ai-integration-490716"
+gcp_region     = "us-central1"
+
+# ============================================================================
+# AWS Configuration - Existing Lambda URL
+# ============================================================================
+aws_lambda_url = "https://YOUR-EXISTING-LAMBDA.lambda-url.us-east-1.on.aws"
+
+# ============================================================================
+# Monitoring - Which Engines/Agents to Monitor (Optional)
+# ============================================================================
+
+# Reasoning Engine IDs to monitor (leave empty for all)
+reasoning_engine_ids = [
+  "8213677864684355584"  # Get your ID: gcloud ai reasoning-engines list
+]
+
+# Agent IDs to monitor (leave empty for all)
+agent_ids = []
+
+# ============================================================================
+# Log Filtering - IMPORTANT FOR COST SAVINGS!
+# ============================================================================
+
+# Filter by severity - Only export ERROR and CRITICAL (saves 80-90% costs)
+log_severity_filter = ["ERROR", "CRITICAL"]
+
+# To export all logs (expensive, use for testing only):
+# log_severity_filter = []
+
+# Advanced filters (optional)
+log_resource_types = []
+custom_log_filter = ""
+use_custom_filter_only = false
+
+# ============================================================================
+# Environment
+# ============================================================================
+environment = "testing"  # Use "testing" since no authentication
+
+# ============================================================================
+# QUICK START CHECKLIST
+# ============================================================================
+# Before running terraform apply, update:
+#
+# ✓ aws_lambda_url    - Your existing AWS Lambda Function URL
+# ✓ reasoning_engine_ids - Your reasoning engine ID
+# ✓ log_severity_filter - Adjust for cost savings
+#
+# Then run:
+#   terraform init
+#   terraform plan
+#   terraform apply
+#
+# ⚠️  WARNING: This setup has NO authentication!
+# Lambda URL is public - anyone can send messages
+# For production, use ../terraform/ folder with OIDC
+# ============================================================================
