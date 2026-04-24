@@ -1,492 +1,277 @@
-# Terraform Infrastructure - GCP to AWS Observability
+# GCP Log Sink Setup - For Existing AWS Infrastructure
 
-## 📋 **Overview**
+## 🎯 **Use Case**
 
-This Terraform configuration deploys a complete cross-cloud observability infrastructure that:
-1. Captures logs from GCP Vertex AI Reasoning Engines
-2. Forwards logs to AWS Lambda via Pub/Sub
-3. Authenticates using shared secrets
-4. Routes data to Portal26 (OTEL/S3/Kinesis) based on customer and size
+You **already have AWS infrastructure** (Lambda, S3, Kinesis, Portal26 routing).
+
+This Terraform **only creates GCP resources** to forward logs to your existing Lambda.
 
 ---
 
-## 🏗️ **Infrastructure Components**
+## 📦 **What Gets Created (GCP Only)**
 
-### GCP Side
-- **Log Sink**: Filters and forwards Reasoning Engine logs
-- **Pub/Sub Topic**: Queues messages
-- **Pub/Sub Subscription**: Push subscription with shared secret in attributes
-- **Service Account**: For token generation
-- **Secret Manager**: Stores shared secret
+```
+GCP Cloud Logging (Reasoning Engine)
+    ↓
+Log Sink (with severity/agent filters)
+    ↓
+Pub/Sub Topic
+    ↓
+Pub/Sub Subscription (OIDC authentication)
+    ↓
+Push to: YOUR EXISTING AWS LAMBDA ✅
+```
 
-### AWS Side
-- **Lambda Function**: Multi-customer log processor
-- **Lambda Function URL**: Public endpoint for Pub/Sub
-- **IAM Role**: Lambda execution role with required permissions
-- **S3 Buckets**: Per-customer trace storage
-- **Kinesis Streams**: Per-customer real-time streaming
-- **Secrets Manager**: Stores shared secret
-- **CloudWatch Logs**: Lambda execution logs
+**No AWS resources created** - just connects GCP to your existing setup.
 
 ---
 
 ## 🚀 **Quick Start**
 
-### Prerequisites
+### **1. Update Configuration**
 
-1. **Tools Installed:**
-   ```bash
-   terraform --version  # >= 1.0
-   gcloud --version
-   aws --version
-   ```
-
-2. **GCP Authentication:**
-   ```bash
-   gcloud auth application-default login
-   # OR
-   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/key.json"
-   ```
-
-3. **AWS Authentication:**
-   ```bash
-   aws configure
-   # OR
-   export AWS_ACCESS_KEY_ID="..."
-   export AWS_SECRET_ACCESS_KEY="..."
-   ```
-
-4. **Permissions:** See `TERRAFORM_PERMISSIONS.md`
-
-### Step-by-Step Deployment
-
-#### 1. Clone and Configure
-
+Copy example config:
 ```bash
-# Navigate to terraform directory
 cd terraform/
-
-# Copy example variables
-cp terraform.tfvars.example terraform.tfvars
-
-# Edit with your values
-nano terraform.tfvars
+cp terraform.tfvars.example.simple terraform.tfvars
 ```
-
-#### 2. Update Configuration
 
 Edit `terraform.tfvars`:
-
 ```hcl
-gcp_project_id = "your-gcp-project-id"
+# GCP Configuration
+gcp_project_id = "agentic-ai-integration-490716"
 gcp_region     = "us-central1"
-aws_region     = "us-east-1"
 
+# Your Existing AWS Lambda URL
+aws_lambda_url = "https://abc123xyz.lambda-url.us-east-1.on.aws"
+
+# Which Reasoning Engines to monitor
 reasoning_engine_ids = [
-  "your-engine-id-1",
-  "your-engine-id-2"
+  "8213677864684355584"  # Get from: gcloud ai reasoning-engines list
 ]
 
-portal26_endpoints = {
-  "customer1" = {
-    otel_endpoint  = "https://customer1.portal26.com/v1/traces"
-    s3_bucket      = "unique-bucket-name-customer1"
-    kinesis_stream = "customer1-stream"
-    customer_id    = "cust-001"
-  }
-}
+# Cost Optimization - Only export errors
+log_severity_filter = ["ERROR", "CRITICAL"]
 ```
 
-#### 3. Package Lambda Code
+---
+
+### **2. Create Service Account (One-time)**
 
 ```bash
-# Create Lambda deployment package
-cd ..  # Go to parent directory
-zip -r terraform/lambda_package.zip lambda_multi_customer.py
-
-# OR if you have dependencies
-pip install -r requirements.txt -t package/
-cd package/
-zip -r ../terraform/lambda_package.zip .
-cd ..
-zip -g terraform/lambda_package.zip lambda_multi_customer.py
-```
-
-#### 4. Initialize Terraform
-
-```bash
-cd terraform/
+cd bootstrap/
 terraform init
-```
-
-Expected output:
-```
-Initializing the backend...
-Initializing provider plugins...
-- Finding hashicorp/google versions matching "~> 5.0"...
-- Finding hashicorp/aws versions matching "~> 5.0"...
-Terraform has been successfully initialized!
-```
-
-#### 5. Plan (Dry Run)
-
-```bash
-terraform plan
-```
-
-Review the plan:
-- Resources to be created
-- No unexpected deletions
-- Correct configuration values
-
-#### 6. Apply
-
-```bash
 terraform apply
 ```
 
-Type `yes` when prompted.
+**What this does:**
+- Creates `terraform-deployer@PROJECT.iam.gserviceaccount.com`
+- Grants 6 required IAM roles
+- Generates key file: `terraform-sa-key.json`
 
-Deployment time: ~5-10 minutes
+---
 
-#### 7. Verify Deployment
+### **3. Deploy GCP Infrastructure**
 
 ```bash
-# Check outputs
-terraform output
+cd ..  # Back to terraform/ directory
+terraform init
+terraform plan    # Review what will be created
+terraform apply   # Type 'yes' to confirm
+```
 
-# Test Lambda
-aws lambda invoke \
-  --function-name $(terraform output -raw lambda_function_name) \
-  --payload '{"test": "message"}' \
-  response.json
+**What gets created:**
+- ✅ Pub/Sub Topic: `reasoning-engine-logs-topic`
+- ✅ Pub/Sub Subscription: `reasoning-engine-to-oidc` (pushes to your Lambda)
+- ✅ Log Sink: `reasoning-engine-to-pubsub` (with filters)
+- ✅ OIDC Service Account: `pubsub-oidc-invoker@PROJECT.iam.gserviceaccount.com`
 
-# Check Lambda logs
-aws logs tail /aws/lambda/$(terraform output -raw lambda_function_name) --follow
+---
+
+## 🔐 **OIDC Authentication**
+
+### **How It Works:**
+
+```
+GCP Pub/Sub Subscription
+    ↓
+Generate OIDC JWT token
+    ↓
+POST https://your-lambda-url
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**JWT Token Contains:**
+- `iss`: `https://accounts.google.com` (issuer)
+- `aud`: Your Lambda URL (audience)
+- `email`: `pubsub-oidc-invoker@PROJECT.iam.gserviceaccount.com`
+- `exp`: Token expiration
+
+---
+
+## ⚠️ **Important: Lambda Must Validate JWT**
+
+Your existing Lambda **must validate** the OIDC JWT token:
+
+### **Python Example:**
+```python
+from google.auth.transport import requests
+from google.oauth2 import id_token
+
+def lambda_handler(event, context):
+    # Extract JWT from Authorization header
+    auth_header = event['headers'].get('authorization', '')
+    token = auth_header.replace('Bearer ', '')
+    
+    # Validate JWT
+    try:
+        claims = id_token.verify_oauth2_token(
+            token,
+            requests.Request(),
+            audience='https://your-lambda-url'
+        )
+        
+        # Verify issuer
+        if claims['iss'] != 'https://accounts.google.com':
+            return {'statusCode': 403, 'body': 'Invalid issuer'}
+            
+    except Exception as e:
+        return {'statusCode': 403, 'body': f'Invalid token: {e}'}
+    
+    # Process message
+    # ... your existing business logic ...
+```
+
+**Dependencies:**
+```
+google-auth==2.23.0
 ```
 
 ---
 
-## 🔧 **Configuration**
+## 💰 **Cost Optimization**
 
-### Variables Reference
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `gcp_project_id` | GCP Project ID | Yes | - |
-| `gcp_region` | GCP Region | No | `us-central1` |
-| `aws_region` | AWS Region | No | `us-east-1` |
-| `reasoning_engine_ids` | List of Reasoning Engine IDs | Yes | - |
-| `portal26_endpoints` | Portal26 endpoints per customer | Yes | - |
-| `lambda_function_name` | Lambda function name | No | `gcp-pubsub-multi-customer-processor` |
-| `environment` | Environment name | No | `production` |
-
-### Portal26 Endpoints Structure
+### **Filter by Severity:**
 
 ```hcl
-portal26_endpoints = {
-  "customer_identifier" = {
-    otel_endpoint  = "https://customer.portal26.com/v1/traces"
-    s3_bucket      = "unique-bucket-name"
-    kinesis_stream = "stream-name"
-    customer_id    = "customer-id"
-  }
-}
+# Option 1: Only errors (80-90% cost savings)
+log_severity_filter = ["ERROR", "CRITICAL"]
+
+# Option 2: Warnings and above (60-70% savings)
+log_severity_filter = ["WARNING", "ERROR", "CRITICAL"]
+
+# Option 3: Everything (expensive)
+log_severity_filter = []
 ```
 
----
+### **Filter by Agent:**
 
-## 🔐 **Security**
+```hcl
+# Monitor specific agents only
+agent_ids = ["agent-123", "agent-456"]
 
-### Shared Secret Authentication
-
-The infrastructure uses **shared secrets** for authentication:
-
-1. **Generation**: Terraform generates a 64-character random secret
-2. **Storage**:
-   - GCP: Secret Manager
-   - AWS: Secrets Manager
-3. **Usage**:
-   - GCP Pub/Sub includes secret in message attributes
-   - AWS Lambda verifies secret against Secrets Manager
-
-### Accessing Secrets
-
-#### View Secret (AWS)
-```bash
-aws secretsmanager get-secret-value \
-  --secret-id gcp-pubsub-shared-secret \
-  --query SecretString \
-  --output text | jq .
-```
-
-#### View Secret (GCP)
-```bash
-gcloud secrets versions access latest \
-  --secret="aws-lambda-shared-secret" \
-  --project=PROJECT_ID
-```
-
-### Rotating Secrets
-
-```bash
-# Update Terraform variable (or regenerate random_password resource)
-terraform apply -replace="random_password.shared_secret"
-
-# This will:
-# - Generate new secret
-# - Update AWS Secrets Manager
-# - Update GCP Secret Manager
-# - Pub/Sub will automatically use new secret
-```
-
----
-
-## 📊 **Monitoring**
-
-### Lambda Monitoring
-
-```bash
-# View recent invocations
-aws lambda get-function \
-  --function-name gcp-pubsub-multi-customer-processor
-
-# View logs
-aws logs tail /aws/lambda/gcp-pubsub-multi-customer-processor --follow
-
-# View metrics
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/Lambda \
-  --metric-name Invocations \
-  --dimensions Name=FunctionName,Value=gcp-pubsub-multi-customer-processor \
-  --start-time 2024-04-23T00:00:00Z \
-  --end-time 2024-04-23T23:59:59Z \
-  --period 3600 \
-  --statistics Sum
-```
-
-### GCP Monitoring
-
-```bash
-# Check Pub/Sub metrics
-gcloud pubsub topics list
-gcloud pubsub subscriptions list
-
-# View Log Sink status
-gcloud logging sinks describe reasoning-engine-to-pubsub
+# Monitor all agents
+agent_ids = []
 ```
 
 ---
 
 ## 🧪 **Testing**
 
-### End-to-End Test
-
+### **1. Check GCP Resources:**
 ```bash
-# 1. Publish test message to Pub/Sub
+# List Pub/Sub topics
+gcloud pubsub topics list
+
+# List subscriptions
+gcloud pubsub subscriptions list
+
+# Test publish
 gcloud pubsub topics publish reasoning-engine-logs-topic \
-  --message='{"test": "message"}' \
-  --attribute=shared_secret=$(terraform output -raw shared_secret_value),customer_id=customer1
-
-# 2. Wait 10 seconds
-
-# 3. Check Lambda logs
-aws logs tail /aws/lambda/gcp-pubsub-multi-customer-processor --since 1m
-
-# Expected output:
-# [OK] Shared secret verified
-# [INFO] Customer identified: customer1
-# [OTEL] Status: 200
+  --message='{"test": "data"}'
 ```
 
-### Test Lambda Directly
-
+### **2. Check Lambda Logs:**
 ```bash
-# Create test payload
-cat > test_payload.json <<EOF
-{
-  "message": {
-    "data": "eyJ0ZXN0IjogIm1lc3NhZ2UifQ==",
-    "attributes": {
-      "shared_secret": "YOUR_SHARED_SECRET",
-      "customer_id": "customer1"
-    },
-    "messageId": "test-123"
-  }
-}
-EOF
-
-# Invoke Lambda
-aws lambda invoke \
-  --function-name gcp-pubsub-multi-customer-processor \
-  --payload file://test_payload.json \
-  output.json
-
-# Check response
-cat output.json
+aws logs tail /aws/lambda/YOUR-FUNCTION-NAME --follow
 ```
+
+### **3. Verify OIDC:**
+- Check Lambda logs for `Authorization` header
+- Verify JWT token is present
+- Check for validation errors
 
 ---
 
-## 🔄 **Updates and Changes**
+## 📊 **What This Terraform Does NOT Create**
 
-### Add New Customer
-
-1. Update `terraform.tfvars`:
-```hcl
-portal26_endpoints = {
-  # ... existing customers ...
-  "new_customer" = {
-    otel_endpoint  = "https://newcustomer.portal26.com/v1/traces"
-    s3_bucket      = "portal26-newcustomer-traces"
-    kinesis_stream = "portal26-newcustomer-stream"
-    customer_id    = "cust-003"
-  }
-}
-```
-
-2. Apply changes:
-```bash
-terraform apply
-```
-
-### Add New Reasoning Engine
-
-1. Update `terraform.tfvars`:
-```hcl
-reasoning_engine_ids = [
-  "existing-id-1",
-  "existing-id-2",
-  "new-engine-id-3"  # Add new ID
-]
-```
-
-2. Apply:
-```bash
-terraform apply
-```
-
-### Update Lambda Code
-
-1. Modify `lambda_multi_customer.py`
-2. Repackage:
-```bash
-zip -r terraform/lambda_package.zip lambda_multi_customer.py
-```
-3. Apply:
-```bash
-terraform apply
-```
+❌ AWS Lambda function (you already have it)
+❌ S3 buckets (already exist)
+❌ Kinesis streams (already exist)
+❌ Portal26 routing logic (in your Lambda code)
 
 ---
 
-## 🗑️ **Cleanup**
-
-### Destroy All Resources
-
-```bash
-terraform destroy
-```
-
-**WARNING**: This will delete:
-- All S3 buckets (and data in them)
-- All Kinesis streams
-- Lambda function
-- Pub/Sub topic and subscription
-- Log Sink
-- Secrets
-
-### Selective Destroy
-
-```bash
-# Destroy only specific resource
-terraform destroy -target=aws_lambda_function.multi_customer_processor
-
-# Destroy only AWS resources
-terraform destroy \
-  -target=aws_lambda_function.multi_customer_processor \
-  -target=aws_s3_bucket.customer_traces \
-  -target=aws_kinesis_stream.customer_streams
-```
-
----
-
-## 🐛 **Troubleshooting**
-
-### Issue: "Permission denied" errors
-
-**Solution**: Check `TERRAFORM_PERMISSIONS.md` and verify all permissions are granted
-
-### Issue: Lambda package too large
-
-**Solution**: Use Lambda layers for dependencies
-```bash
-# Create layer
-pip install requests -t python/
-zip -r requests_layer.zip python/
-
-# Upload layer
-aws lambda publish-layer-version \
-  --layer-name requests \
-  --zip-file fileb://requests_layer.zip \
-  --compatible-runtimes python3.11
-```
-
-### Issue: Pub/Sub subscription not receiving messages
-
-**Check:**
-```bash
-# Verify Log Sink filter
-gcloud logging sinks describe reasoning-engine-to-pubsub
-
-# Check if logs match filter
-gcloud logging read 'resource.type="aiplatform.googleapis.com/ReasoningEngine"' --limit=5
-
-# Check Pub/Sub metrics
-gcloud pubsub topics describe reasoning-engine-logs-topic
-```
-
-### Issue: Lambda authentication failing
-
-**Check:**
-```bash
-# Verify shared secret in AWS
-aws secretsmanager get-secret-value --secret-id gcp-pubsub-shared-secret
-
-# Verify shared secret in GCP
-gcloud secrets versions access latest --secret="aws-lambda-shared-secret"
-
-# Check if secrets match
-```
-
----
-
-## 📚 **Additional Resources**
-
-- **Terraform Documentation**: https://www.terraform.io/docs
-- **GCP Pub/Sub**: https://cloud.google.com/pubsub/docs
-- **AWS Lambda**: https://docs.aws.amazon.com/lambda/
-- **Portal26 OTEL**: (Your Portal26 documentation link)
-
----
-
-## 📝 **File Structure**
+## 🗂️ **File Structure**
 
 ```
 terraform/
-├── main.tf                          # Main configuration
-├── gcp_agent_logging.tf             # GCP agent logging (automatic)
-├── gcp_log_sink_pubsub.tf           # Log Sink and Pub/Sub
-├── aws_lambda_multi_customer.tf     # Lambda and AWS resources
-├── security_shared_secret.tf        # Shared secret configuration
-├── terraform.tfvars.example         # Example variables
-├── terraform.tfvars                 # Your actual variables (gitignored)
-├── lambda_multi_customer.py         # Lambda function code
-├── lambda_package.zip               # Lambda deployment package
-├── TERRAFORM_PERMISSIONS.md         # Required permissions guide
-└── README.md                        # This file
+├── bootstrap/
+│   └── main.tf                      # Service account setup
+├── main.tf                          # Terraform config (GCP only)
+├── gcp_log_sink_pubsub.tf          # Log sink + Pub/Sub
+├── terraform.tfvars.example.simple  # Config example
+└── README_EXISTING_AWS.md          # This file
 ```
 
 ---
 
-**Need Help?** Check the troubleshooting section or review the Terraform output for specific error messages!
+## 🔧 **Troubleshooting**
+
+### **"Permission denied" during terraform apply**
+- Run bootstrap first: `cd bootstrap/ && terraform apply`
+- Use service account: `export GOOGLE_APPLICATION_CREDENTIALS="../terraform-sa-key.json"`
+
+### **"No logs appearing in Lambda"**
+- Check log sink filter matches your reasoning engine ID
+- Verify severity filter isn't too restrictive
+- Check Pub/Sub subscription is pushing to correct URL
+
+### **"Lambda returns 403"**
+- Your Lambda must validate OIDC JWT tokens
+- Check Authorization header is present
+- Verify audience matches your Lambda URL
+
+### **"JWT validation failed"**
+- Install `google-auth` in Lambda: `pip install google-auth`
+- Verify audience = Lambda URL (exact match)
+- Check issuer = `https://accounts.google.com`
+
+---
+
+## 📞 **Get Your Reasoning Engine ID**
+
+```bash
+gcloud ai reasoning-engines list \
+  --location=us-central1 \
+  --project=agentic-ai-integration-490716
+```
+
+Copy the ID (e.g., `8213677864684355584`) to `terraform.tfvars`.
+
+---
+
+## ✅ **Deployment Checklist**
+
+- [ ] AWS Lambda already exists and has business logic
+- [ ] Updated `terraform.tfvars` with Lambda URL
+- [ ] Updated reasoning engine IDs
+- [ ] Set log severity filter for cost savings
+- [ ] Deployed bootstrap (service account)
+- [ ] Deployed main terraform (GCP resources)
+- [ ] Lambda validates OIDC JWT tokens
+- [ ] Tested end-to-end flow
+
+---
+
+**Clean, GCP-only setup for existing AWS infrastructure!** 🎯

@@ -1,75 +1,69 @@
 # ============================================================================
-# Terraform Variables - Example Configuration
+# Terraform Variables - Example Configuration (SIMPLIFIED)
 # ============================================================================
 # Copy this file to terraform.tfvars and update with your values
 # ============================================================================
 
+# ============================================================================
 # GCP Configuration
+# ============================================================================
 gcp_project_id = "agentic-ai-integration-490716"
 gcp_region     = "us-central1"
 
-# AWS Configuration
-aws_region = "us-east-1"
+# ============================================================================
+# AWS Configuration - Existing Lambda URL
+# ============================================================================
+aws_lambda_url = "https://YOUR-EXISTING-LAMBDA.lambda-url.us-east-1.on.aws"
 
-# Reasoning Engine IDs to Monitor (optional)
+# ============================================================================
+# Monitoring - Which Engines/Agents to Monitor (Optional)
+# ============================================================================
+
+# Reasoning Engine IDs to monitor (leave empty for all)
 reasoning_engine_ids = [
-  "8213677864684355584",  # adk-style-monitoring-agent
-  "6010661182900273152",  # agent-2
-  "8019460130754002944"   # agent-3
+  "8213677864684355584"  # Get your ID: gcloud ai reasoning-engines list
 ]
 
-# Agent IDs to Monitor (optional)
+# Agent IDs to monitor (leave empty for all)
 agent_ids = []
-# Example: ["agent-001", "agent-002", "my-custom-agent"]
 
-# Environment
+# ============================================================================
+# Log Filtering - IMPORTANT FOR COST SAVINGS!
+# ============================================================================
+
+# Filter by severity - Only export ERROR and CRITICAL (saves 80-90% costs)
+log_severity_filter = ["ERROR", "CRITICAL"]
+
+# To export all logs (expensive, use for testing only):
+# log_severity_filter = []
+
+# Advanced filters (optional)
+log_resource_types = []
+custom_log_filter = ""
+use_custom_filter_only = false
+
+# ============================================================================
+# Note: AWS infrastructure (Lambda, S3, Kinesis, Portal26 routing)
+# already exists and is managed separately.
+# This Terraform only creates GCP resources (Log Sink + Pub/Sub)
+# ============================================================================
+
 environment = "production"
 
-# Portal26 Endpoints per Customer
-portal26_endpoints = {
-  "customer1" = {
-    otel_endpoint  = "https://customer1.portal26.com/v1/traces"
-    s3_bucket      = "portal26-customer1-traces"
-    kinesis_stream = "portal26-customer1-stream"
-    customer_id    = "cust-001"
-  }
-  "customer2" = {
-    otel_endpoint  = "https://customer2.portal26.com/v1/traces"
-    s3_bucket      = "portal26-customer2-traces"
-    kinesis_stream = "portal26-customer2-stream"
-    customer_id    = "cust-002"
-  }
-  "default" = {
-    otel_endpoint  = "https://default.portal26.com/v1/traces"
-    s3_bucket      = "portal26-default-traces"
-    kinesis_stream = "portal26-default-stream"
-    customer_id    = "default"
-  }
-}
-
-# Lambda Configuration
-lambda_function_name = "gcp-pubsub-multi-customer-processor"
-
 # ============================================================================
-# Log Sink Filter Configuration (ALL OPTIONAL)
+# QUICK START CHECKLIST
 # ============================================================================
-# Note: All filter options are optional. Leave empty to skip that filter.
-# Multiple filters are combined with AND logic.
+# Before running terraform apply, update:
+#
+# ✓ aws_lambda_url    - Your existing AWS Lambda Function URL
+# ✓ reasoning_engine_ids - Your reasoning engine ID (gcloud ai reasoning-engines list)
+# ✓ log_severity_filter - Adjust for cost savings
+#
+# Then run:
+#   cd bootstrap/
+#   terraform init && terraform apply  # Create service account first
+#   cd ..
+#   terraform init
+#   terraform plan
+#   terraform apply
 # ============================================================================
-
-# Filter by log severity (optional - leave empty to capture all severities)
-log_severity_filter = ["ERROR", "CRITICAL", "ALERT"]
-# Available severities: DEFAULT, DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY
-
-# Filter by GCP resource types (optional - leave empty to capture all types)
-log_resource_types = []
-# Example: ["gce_instance", "cloud_run_revision", "cloud_function", "k8s_container"]
-
-# Custom filter using Advanced Logging Query Language (optional)
-custom_log_filter = ""
-# Example: "jsonPayload.message=~\"error\" AND labels.environment=\"production\""
-# Example: "resource.labels.service_name=\"my-service\" AND severity>=ERROR"
-
-# Use ONLY custom filter (optional - ignore other filter variables if true)
-use_custom_filter_only = false
-# Set to true if you want to use only custom_log_filter and ignore other filters
