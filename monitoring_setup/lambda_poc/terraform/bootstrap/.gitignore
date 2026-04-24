@@ -1,0 +1,17 @@
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Variable files with sensitive data
+terraform.tfvars
+
+# Service account keys - NEVER COMMIT!
+*.json
+terraform-sa-key.json
+*-key.json
+
+# Backup files
+*.backup
+*~

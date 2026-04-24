@@ -1,0 +1,14 @@
+# ============================================================================
+# Terraform Bootstrap Variables - Example Configuration
+# ============================================================================
+# Copy this file to terraform.tfvars and update with your values
+# ============================================================================
+
+# GCP Project ID
+gcp_project_id = "agentic-ai-integration-490716"
+
+# GCP Region
+gcp_region = "us-central1"
+
+# Service Account ID (optional - default is "terraform-deployer")
+service_account_id = "terraform-deployer"

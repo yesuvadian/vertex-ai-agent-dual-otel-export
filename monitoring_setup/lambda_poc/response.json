@@ -1,1 +1,0 @@
-{"statusCode": 200, "headers": {"Content-Type": "application/json", "X-Processing-Status": "success"}, "body": "{\"status\": \"success\", \"message\": \"Message received and processed\", \"messageId\": \"test-123\", \"publishTime\": \"2025-01-15T10:30:00Z\", \"dataPreview\": \"Hello from GCP\", \"timestamp\": \"2026-04-21T09:48:56.748511\"}"}
