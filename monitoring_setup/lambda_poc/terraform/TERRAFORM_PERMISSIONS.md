@@ -28,7 +28,6 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
 | `roles/iam.serviceAccountAdmin` | Create service accounts for OIDC | `iam.serviceAccounts.create`<br>`iam.serviceAccounts.delete`<br>`iam.serviceAccounts.get` |
 | `roles/iam.serviceAccountUser` | Use service accounts | `iam.serviceAccounts.actAs` |
 | `roles/resourcemanager.projectIamAdmin` | Grant IAM permissions | `resourcemanager.projects.setIamPolicy`<br>`resourcemanager.projects.getIamPolicy` |
-| `roles/secretmanager.admin` | Manage secrets (shared secret) | `secretmanager.secrets.create`<br>`secretmanager.versions.add`<br>`secretmanager.secrets.setIamPolicy` |
 
 #### **Optional (for verification)**
 
@@ -66,191 +65,16 @@ iam.serviceAccounts.get,\
 iam.serviceAccounts.actAs,\
 resourcemanager.projects.get,\
 resourcemanager.projects.getIamPolicy,\
-resourcemanager.projects.setIamPolicy,\
-secretmanager.secrets.create,\
-secretmanager.secrets.delete,\
-secretmanager.secrets.get,\
-secretmanager.versions.add,\
-secretmanager.versions.access,\
-secretmanager.secrets.setIamPolicy"
+resourcemanager.projects.setIamPolicy"
 ```
 
 ---
 
 ## 🔐 **AWS Permissions**
 
-### User/Role Requirements
+**No AWS permissions needed** - Terraform uses existing AWS Lambda infrastructure.
 
-The AWS user or role running Terraform needs these permissions:
-
-#### **Required IAM Policies**
-
-##### **1. Lambda Management**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "lambda:CreateFunction",
-        "lambda:UpdateFunctionCode",
-        "lambda:UpdateFunctionConfiguration",
-        "lambda:DeleteFunction",
-        "lambda:GetFunction",
-        "lambda:ListFunctions",
-        "lambda:TagResource",
-        "lambda:UntagResource",
-        "lambda:CreateFunctionUrlConfig",
-        "lambda:UpdateFunctionUrlConfig",
-        "lambda:DeleteFunctionUrlConfig",
-        "lambda:GetFunctionUrlConfig"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-##### **2. IAM Role Management**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "iam:CreateRole",
-        "iam:DeleteRole",
-        "iam:GetRole",
-        "iam:ListRoles",
-        "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:DeleteRolePolicy",
-        "iam:GetRolePolicy",
-        "iam:PassRole",
-        "iam:TagRole",
-        "iam:UntagRole"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-##### **3. S3 Management**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket",
-        "s3:DeleteBucket",
-        "s3:GetBucketLocation",
-        "s3:ListBucket",
-        "s3:PutBucketVersioning",
-        "s3:GetBucketVersioning",
-        "s3:PutLifecycleConfiguration",
-        "s3:GetLifecycleConfiguration",
-        "s3:PutBucketTagging",
-        "s3:GetBucketTagging"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-##### **4. Kinesis Management**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "kinesis:CreateStream",
-        "kinesis:DeleteStream",
-        "kinesis:DescribeStream",
-        "kinesis:ListStreams",
-        "kinesis:AddTagsToStream",
-        "kinesis:RemoveTagsFromStream"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-##### **5. CloudWatch Logs**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:DeleteLogGroup",
-        "logs:DescribeLogGroups",
-        "logs:PutRetentionPolicy",
-        "logs:TagLogGroup",
-        "logs:UntagLogGroup"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-##### **6. Secrets Manager**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:DeleteSecret",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:PutSecretValue",
-        "secretsmanager:TagResource",
-        "secretsmanager:UntagResource"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-#### **AWS Managed Policies (Alternative)**
-
-Instead of custom policies, you can use these AWS managed policies:
-
-```bash
-# Attach to your Terraform user/role
-aws iam attach-user-policy \
-  --user-name terraform-user \
-  --policy-arn arn:aws:iam::aws:policy/POLICY_NAME
-```
-
-| Managed Policy | Purpose |
-|----------------|---------|
-| `PowerUserAccess` | Full access except IAM (recommended for testing) |
-| `IAMFullAccess` | Full IAM permissions (needed for role creation) |
-
-**OR** for production, use minimal custom policy above.
+The `aws_lambda_url` variable points to your pre-deployed Lambda function. Terraform only creates GCP resources (Log Sink + Pub/Sub) that forward to this existing Lambda.
 
 ---
 
@@ -287,10 +111,6 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
   --member="serviceAccount:terraform-deployer@PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:terraform-deployer@PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.admin"
-
 # 3. Create and download key
 gcloud iam service-accounts keys create terraform-key.json \
   --iam-account=terraform-deployer@PROJECT_ID.iam.gserviceaccount.com
@@ -311,46 +131,6 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
   --role="roles/logging.configWriter"
 
 # Repeat for other roles...
-```
-
-### AWS Setup
-
-#### Option 1: Using IAM User (Recommended for CI/CD)
-
-```bash
-# 1. Create IAM user
-aws iam create-user --user-name terraform-deployer
-
-# 2. Create custom policy (save as terraform-policy.json)
-aws iam create-policy \
-  --policy-name TerraformDeploymentPolicy \
-  --policy-document file://terraform-policy.json
-
-# 3. Attach policy to user
-aws iam attach-user-policy \
-  --user-name terraform-deployer \
-  --policy-arn arn:aws:iam::ACCOUNT_ID:policy/TerraformDeploymentPolicy
-
-# 4. Create access keys
-aws iam create-access-key --user-name terraform-deployer
-
-# 5. Configure AWS CLI
-aws configure
-# Enter access key, secret key, region
-```
-
-#### Option 2: Using IAM Role (for EC2/ECS)
-
-```bash
-# Create role with trust policy
-aws iam create-role \
-  --role-name TerraformDeployerRole \
-  --assume-role-policy-document file://trust-policy.json
-
-# Attach policies
-aws iam attach-role-policy \
-  --role-name TerraformDeployerRole \
-  --policy-arn arn:aws:iam::ACCOUNT_ID:policy/TerraformDeploymentPolicy
 ```
 
 ---
@@ -403,11 +183,8 @@ Before running Terraform, verify:
 - [ ] Can create test topic: `gcloud pubsub topics create test-topic`
 
 ### AWS
-- [ ] IAM user/role created
-- [ ] Required policies attached
-- [ ] AWS CLI configured
-- [ ] Can list functions: `aws lambda list-functions`
-- [ ] Can list buckets: `aws s3 ls`
+- [ ] Have the Lambda Function URL from existing deployment
+- [ ] Lambda is accessible and configured with OIDC authentication
 
 ---
 
@@ -418,11 +195,6 @@ Before running Terraform, verify:
 gcloud auth list
 gcloud projects list
 gcloud pubsub topics list
-
-# Verify AWS access
-aws sts get-caller-identity
-aws lambda list-functions --region us-east-1
-aws s3 ls
 
 # Initialize Terraform
 terraform init
@@ -450,14 +222,9 @@ Solution: Grant roles/resourcemanager.projectIamAdmin
 Solution: Grant roles/pubsub.admin
 ```
 
-#### AWS: "User is not authorized to perform: lambda:CreateFunction"
+#### "Cannot access Lambda Function URL"
 ```
-Solution: Attach Lambda management policy
-```
-
-#### AWS: "Access Denied" on S3
-```
-Solution: Grant S3 bucket creation permissions
+Solution: Verify aws_lambda_url variable points to your existing Lambda
 ```
 
 ---

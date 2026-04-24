@@ -2,9 +2,9 @@
 
 ## 🎯 **What This Does**
 
-Deploys cross-cloud monitoring: GCP AI agents → AWS Lambda
+Connects GCP AI agent logs to your existing AWS Lambda infrastructure.
 
-**Flow:** GCP logs → Pub/Sub → AWS Lambda → Portal26
+**Flow:** GCP logs → Pub/Sub → Your existing AWS Lambda → Portal26
 
 ---
 
@@ -19,49 +19,56 @@ aws --version
 
 **Authentication:**
 ```bash
-# GCP
+# GCP (required)
 gcloud auth application-default login
-
-# AWS
-aws configure
 ```
+
+**AWS Lambda:**
+- Have your Lambda Function URL ready (from existing deployment)
 
 **Permissions:** See `TERRAFORM_PERMISSIONS.md`
 
 ---
 
-## 🚀 **Deploy in 5 Steps**
+## 🚀 **Deploy in 6 Steps**
 
-### **Step 1: Configure**
+### **Step 1: Bootstrap (First Time Only)**
 ```bash
 cd terraform/
+terraform init
+terraform apply -target=google_service_account.oidc_auth
+```
+
+This creates the GCP service account needed for OIDC authentication. Copy the service account email from the output.
+
+### **Step 2: Configure AWS Lambda**
+Add the GCP service account email to your Lambda's OIDC configuration (see Lambda setup docs).
+
+### **Step 3: Configure Terraform**
+```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-### **Step 2: Edit Variables**
+### **Step 4: Edit Variables**
 Edit `terraform.tfvars`:
 ```hcl
 gcp_project_id = "your-project-id"
 reasoning_engine_ids = ["your-engine-id"]
+aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws/"
 log_severity_filter = ["ERROR", "CRITICAL"]  # Recommended
 ```
 
-### **Step 3: Initialize**
-```bash
-terraform init
-```
-
-### **Step 4: Plan**
+### **Step 5: Plan**
 ```bash
 terraform plan
 ```
 
-### **Step 5: Deploy**
+### **Step 6: Deploy**
 ```bash
 terraform apply
 ```
 
-**Done!** Takes 5-10 minutes.
+**Done!** Takes 2-3 minutes.
 
 ---
 
@@ -80,51 +87,42 @@ agent_ids = ["agent-001"]
 log_severity_filter = ["ERROR"]
 ```
 
-### **Customer Endpoints**
+### **AWS Lambda URL**
 ```hcl
-portal26_endpoints = {
-  "customer1" = {
-    otel_endpoint  = "https://customer1.portal26.com/v1/traces"
-    s3_bucket      = "unique-bucket-name"
-    kinesis_stream = "stream-name"
-    customer_id    = "cust-001"
-  }
-}
+# Required: URL of your existing Lambda Function
+aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws/"
 ```
 
 ---
 
 ## 📊 **What Gets Created**
 
-**GCP:**
+**GCP Resources (Created by Terraform):**
 - Log Sink (with filters)
 - Pub/Sub Topic & Subscription
-- Service Account (OIDC)
-- Secret Manager (shared secret)
+- Service Account (for OIDC authentication)
+- IAM Bindings (Pub/Sub push permissions)
 
-**AWS:**
-- Lambda Function (multi-customer router)
-- Lambda Function URL
-- S3 Buckets (per customer)
-- Kinesis Streams (per customer)
-- Secrets Manager (shared secret)
+**AWS Resources (Pre-existing):**
+- Lambda Function (already deployed)
+- Lambda Function URL (provided as variable)
 
 ---
 
 ## 🧪 **Testing**
 
 ```bash
-# Check outputs
+# Check Terraform outputs
 terraform output
 
-# Test Lambda
-aws lambda invoke \
-  --function-name gcp-pubsub-multi-customer-processor \
-  --payload '{"test": "message"}' \
-  response.json
+# Trigger a test log in GCP to verify flow
+gcloud logging write test-log "Test message" --severity=ERROR
 
-# View logs
-aws logs tail /aws/lambda/gcp-pubsub-multi-customer-processor --follow
+# Check GCP Pub/Sub
+gcloud pubsub subscriptions pull reasoning-engine-to-aws --limit=1
+
+# Check your Lambda logs (adjust function name as needed)
+# AWS CLI or AWS Console
 ```
 
 ---
@@ -150,12 +148,9 @@ log_severity_filter = ["WARNING", "ERROR", "CRITICAL"]  # Changed
 terraform apply
 ```
 
-### **Add Customer**
+### **Update Lambda URL**
 ```hcl
-portal26_endpoints = {
-  # ... existing ...
-  "new_customer" = { ... }
-}
+aws_lambda_url = "https://new-lambda-url.lambda-url.us-east-1.on.aws/"
 ```
 ```bash
 terraform apply
@@ -169,7 +164,7 @@ terraform apply
 terraform destroy
 ```
 
-**Warning:** Deletes all resources and data!
+**Note:** This only deletes GCP resources (Log Sink, Pub/Sub). Your AWS Lambda remains unchanged.
 
 ---
 
