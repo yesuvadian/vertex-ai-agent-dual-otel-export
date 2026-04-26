@@ -73,22 +73,22 @@ output "setup_complete" {
 
     GCP Resources Created:
     - Pub/Sub Topic: ${google_pubsub_topic.reasoning_engine_logs.name}
-    - Pub/Sub Subscription: ${google_pubsub_subscription.reasoning_engine_to_oidc.name}
+    - Pub/Sub Subscription: ${google_pubsub_subscription.reasoning_engine_to_lambda.name}
     - Log Sink: ${google_logging_project_sink.reasoning_engine_to_pubsub.name}
-    - OIDC Service Account: ${google_service_account.pubsub_oidc_invoker.email}
 
     Target Endpoint:
     - Your AWS Lambda: ${var.aws_lambda_url}
 
     Security:
-    - Authentication: OIDC (JWT tokens from GCP)
-    - Service Account: ${google_service_account.pubsub_oidc_invoker.email}
+    - Authentication: NONE (No OIDC)
+    - Lambda URL is public and accepts all requests
+    - ⚠️  WARNING: Use for testing only - no authentication!
 
     Next Steps:
     1. Verify Pub/Sub subscription is pushing to your Lambda
     2. Test: Generate a log in your Reasoning Engine
     3. Check your existing Lambda logs for incoming GCP messages
-    4. Ensure your Lambda validates OIDC JWT tokens
+    4. For production: Use terraform/ folder with OIDC authentication
 
     ============================================================================
   EOT
@@ -103,7 +103,7 @@ output "gcp_console_links" {
   description = "GCP Console links"
   value = {
     pubsub_topic        = "https://console.cloud.google.com/cloudpubsub/topic/detail/${google_pubsub_topic.reasoning_engine_logs.name}?project=${var.gcp_project_id}"
-    pubsub_subscription = "https://console.cloud.google.com/cloudpubsub/subscription/detail/${google_pubsub_subscription.reasoning_engine_to_oidc.name}?project=${var.gcp_project_id}"
+    pubsub_subscription = "https://console.cloud.google.com/cloudpubsub/subscription/detail/${google_pubsub_subscription.reasoning_engine_to_lambda.name}?project=${var.gcp_project_id}"
     log_sink            = "https://console.cloud.google.com/logs/router?project=${var.gcp_project_id}"
   }
 }

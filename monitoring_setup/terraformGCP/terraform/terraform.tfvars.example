@@ -17,8 +17,6 @@ reasoning_engine_ids = [
 
 # ============================================================================
 # That's it! Update the values above, then run:
-#   cd ../bootstrap/
-#   terraform init && terraform apply
-#   cd ../terraform/
-#   terraform init && terraform apply
+#   terraform init
+#   terraform apply
 # ============================================================================
