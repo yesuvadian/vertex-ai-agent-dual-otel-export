@@ -1,36 +1,40 @@
-# How to Distribute to Clients
+# How to Send to Clients
 
-## Package Contents
+## 1. Zip the Package
 
-Send the `client_package/` folder containing:
-- `CLIENT_GUIDE.md`
-- `main.tf`
-- `gcp_log_sink_pubsub.tf`
-- `terraform.tfvars.example`
-- `appengine-sa-key.json`
+```bash
+zip -r client-setup.zip client_package/
+```
 
-## What to Provide
+Or just send the `client_package/` folder directly.
 
-Send to client:
-1. The `client_package/` folder (or zip it)
-2. Their AWS Lambda URL
-3. Their Reasoning Engine IDs
+## 2. Send to Client
 
-## Client Requirements
+Send via secure channel:
+- `client-setup.zip` (or `client_package/` folder)
+- Their Lambda URL
+- Their Reasoning Engine IDs
 
-Client needs:
-- Terraform installed
-- Lambda URL (just the URL string)
-- Reasoning Engine IDs
+## 3. Email Template
 
-Client does NOT need:
-- gcloud CLI
-- AWS CLI
-- GCP account
-- AWS account
+```
+Subject: GCP Log Sink Setup
+
+Hi [Client],
+
+Attached: client-setup.zip
+
+Your information:
+- Lambda URL: https://YOUR-LAMBDA-URL.on.aws
+- Engine ID: YOUR-ENGINE-ID
+
+Instructions inside CLIENT_GUIDE.md (3 steps, ~5 minutes)
+
+Requirements: Terraform only (no AWS/GCP CLI needed)
+```
 
 ## Security
 
-- Send package via secure channel
 - Key file gives Editor access to GCP project
+- Send via secure channel only
 - Rotate key every 90 days
