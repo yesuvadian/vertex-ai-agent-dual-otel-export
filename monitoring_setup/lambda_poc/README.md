@@ -92,13 +92,13 @@ terraform init && terraform apply
 
 ```bash
 # Step 1: Bootstrap (one-time)
-cd terraform/bootstrap/
+cd bootstrap/
 terraform init && terraform apply
 terraform output -raw service_account_key_file_content > terraform-sa-key.json
 export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/terraform-sa-key.json"
 
 # Step 2: Main infrastructure
-cd ..
+cd ../terraform/
 cp terraform.tfvars.example terraform.tfvars
 # Edit with Lambda URL and Engine IDs
 terraform init && terraform apply
@@ -160,10 +160,12 @@ log_severity_filter = ["ERROR", "CRITICAL"]  # 80-90% cost savings
 
 ### **terraform/ (With OIDC):**
 - `README.md` - Main setup guide
-- `BOOTSTRAP_README.md` - Bootstrap service account setup
 - `TERRAFORM_PERMISSIONS.md` - Required permissions
 - `TERRAFORM_QUICK_START.md` - Quick deployment guide
 - `FILTERS_OVERVIEW.md` - Log filtering options
+
+### **bootstrap/ (For OIDC setup):**
+- `BOOTSTRAP_README.md` - Bootstrap service account setup
 
 ---
 
@@ -239,7 +241,7 @@ Is this for production?
 
 1. Test with `terraform_no_oidc/`
 2. Add JWT validation to your Lambda
-3. Deploy `terraform/` with OIDC
+3. Deploy `bootstrap/` then `terraform/` with OIDC
 4. Remove `terraform_no_oidc/` resources
 
 ---

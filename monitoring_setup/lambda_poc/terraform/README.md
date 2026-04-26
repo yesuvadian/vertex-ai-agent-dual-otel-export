@@ -59,7 +59,7 @@ log_severity_filter = ["ERROR", "CRITICAL"]
 ### **2. Create Service Account (One-time)**
 
 ```bash
-cd bootstrap/
+cd ../bootstrap/
 terraform init
 terraform apply
 ```
@@ -74,7 +74,7 @@ terraform apply
 ### **3. Deploy GCP Infrastructure**
 
 ```bash
-cd ..  # Back to terraform/ directory
+cd ../terraform/  # Move to terraform/ directory
 terraform init
 terraform plan    # Review what will be created
 terraform apply   # Type 'yes' to confirm
