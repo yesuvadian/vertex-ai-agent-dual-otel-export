@@ -1,338 +1,424 @@
-# GCP Log Sink Setup - WITHOUT OIDC Authentication
+# Terraform Setup - For Users Without gcloud CLI
 
-## ⚠️ **WARNING: NO AUTHENTICATION**
+## 📋 **Prerequisites**
 
-This Terraform configuration creates GCP resources **without OIDC authentication**.
-
-**Security:**
-- ❌ No OIDC service account
-- ❌ No JWT tokens
-- ❌ Lambda URL is public - anyone can send requests
-
-**Use Cases:**
-- ✅ Testing/POC when Lambda doesn't validate JWT
-- ✅ Development environments
-- ❌ NOT for production
-
-**For Production:** Use `../terraform/` folder with OIDC authentication
+You need:
+1. ✅ Terraform installed (`terraform --version`)
+2. ✅ Service account key file: `appengine-sa-key.json` (provided separately)
+3. ❌ **NO gcloud CLI needed!**
 
 ---
 
-## 📦 **What Gets Created (GCP Only)**
+## 🚀 **Setup Steps**
 
+### **Step 1: Get the Files**
+
+You should have:
 ```
-GCP Cloud Logging (Reasoning Engine)
-    ↓
-Log Sink (with severity/agent filters)
-    ↓
-Pub/Sub Topic
-    ↓
-Pub/Sub Subscription (NO OIDC - just HTTP POST)
-    ↓
-Push to: YOUR EXISTING AWS LAMBDA ✅
+terraform_no_oidc/
+├── main.tf
+├── gcp_log_sink_pubsub.tf
+├── terraform.tfvars.example
+├── appengine-sa-key.json           ← Key file (provided)
+└── README_FOR_USERS.md             ← This file
 ```
 
-**No authentication** - Pub/Sub sends plain HTTP POST to Lambda
+**If you don't have `appengine-sa-key.json`:**
+- Ask the admin to provide it
+- It authenticates Terraform to GCP
 
 ---
 
-## 🚀 **Quick Start (Automated Setup)**
+### **Step 2: Set Authentication**
 
-### **Option 1: Use Setup Script (Easiest)**
+**Choose your operating system:**
 
-**Linux/Mac:**
+#### **Linux/Mac:**
 ```bash
 cd terraform_no_oidc/
-bash setup_with_existing_sa.sh
+
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+
+# Verify it's set
+echo $GOOGLE_APPLICATION_CREDENTIALS
 ```
 
-**Windows:**
+#### **Windows PowerShell:**
+```powershell
+cd terraform_no_oidc\
+
+$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
+
+# Verify it's set
+echo $env:GOOGLE_APPLICATION_CREDENTIALS
+```
+
+#### **Windows CMD:**
 ```cmd
 cd terraform_no_oidc\
-setup_with_existing_sa.bat
+
+set GOOGLE_APPLICATION_CREDENTIALS=%cd%\appengine-sa-key.json
+
+# Verify it's set
+echo %GOOGLE_APPLICATION_CREDENTIALS%
 ```
 
-This script will:
-- ✅ Create key file for existing App Engine service account
-- ✅ Set authentication automatically
-- ✅ Create terraform.tfvars from example
+---
 
-Then edit `terraform.tfvars` and run:
+### **Step 3: Configure Terraform**
+
+```bash
+# Create configuration file
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit the file (use any text editor)
+notepad terraform.tfvars    # Windows
+nano terraform.tfvars       # Linux
+vim terraform.tfvars        # Linux/Mac
+```
+
+**Update these values:**
+```hcl
+# Your AWS Lambda URL (required)
+aws_lambda_url = "https://YOUR-LAMBDA-URL.lambda-url.us-east-1.on.aws"
+
+# Your Reasoning Engine IDs (required)
+reasoning_engine_ids = [
+  "YOUR_ENGINE_ID_HERE"
+]
+
+# Cost optimization (optional but recommended)
+log_severity_filter = ["ERROR", "CRITICAL"]
+```
+
+**Where to get these values:**
+- `aws_lambda_url`: From AWS Console → Lambda → Your Function → Configuration → Function URL
+- `reasoning_engine_ids`: Provided by admin or from GCP Console
+
+---
+
+### **Step 4: Initialize Terraform**
+
 ```bash
 terraform init
+```
+
+**Expected output:**
+```
+Initializing the backend...
+Initializing provider plugins...
+- Finding hashicorp/google versions matching "~> 5.0"...
+- Installing hashicorp/google v5.x.x...
+
+Terraform has been successfully initialized!
+```
+
+✅ **If you see this** - continue to next step
+
+❌ **If you see errors**:
+- Check `GOOGLE_APPLICATION_CREDENTIALS` is set correctly
+- Check `appengine-sa-key.json` exists in current directory
+- Check you're in `terraform_no_oidc/` directory
+
+---
+
+### **Step 5: Preview Changes**
+
+```bash
+terraform plan
+```
+
+**Expected output:**
+```
+Terraform will perform the following actions:
+
+  # google_logging_project_sink.reasoning_engine_to_pubsub will be created
+  + resource "google_logging_project_sink" ...
+
+  # google_pubsub_topic.reasoning_engine_logs will be created
+  + resource "google_pubsub_topic" ...
+
+  # google_pubsub_subscription.reasoning_engine_to_lambda will be created
+  + resource "google_pubsub_subscription" ...
+
+  # google_pubsub_topic_iam_member.log_sink_publisher will be created
+  + resource "google_pubsub_topic_iam_member" ...
+
+Plan: 4 to add, 0 to change, 0 to destroy.
+```
+
+✅ **Review this carefully** - it shows what will be created
+
+---
+
+### **Step 6: Deploy**
+
+```bash
+terraform apply
+```
+
+Terraform will ask for confirmation:
+```
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value:
+```
+
+**Type:** `yes` and press Enter
+
+**Wait 1-2 minutes...**
+
+**Success output:**
+```
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+setup_complete = <<EOT
+============================================================================
+GCP Log Sink Deployment Complete!
+============================================================================
+
+GCP Resources Created:
+- Pub/Sub Topic: reasoning-engine-logs-topic
+- Pub/Sub Subscription: reasoning-engine-to-lambda
+- Log Sink: reasoning-engine-to-pubsub
+
+Target Endpoint:
+- Your AWS Lambda: https://...
+...
+```
+
+✅ **Done!** Resources are created in GCP
+
+---
+
+## 🧪 **Verification**
+
+### **Check What Was Created:**
+
+```bash
+# View Terraform state
+terraform show
+
+# List outputs
+terraform output
+
+# See specific output
+terraform output lambda_target_url
+```
+
+### **Check in AWS:**
+
+Monitor your Lambda function logs to see if messages are arriving:
+```bash
+# If you have AWS CLI
+aws logs tail /aws/lambda/YOUR_FUNCTION_NAME --follow
+```
+
+Or check AWS Console → Lambda → Your Function → Monitor → View CloudWatch logs
+
+---
+
+## 🔄 **Making Changes**
+
+### **Update Configuration:**
+
+1. Edit `terraform.tfvars`
+2. Run `terraform plan` to preview changes
+3. Run `terraform apply` to apply changes
+
+### **Example: Add More Reasoning Engines**
+
+Edit `terraform.tfvars`:
+```hcl
+reasoning_engine_ids = [
+  "8213677864684355584",
+  "NEW_ENGINE_ID_HERE"    # Add new ID
+]
+```
+
+Then:
+```bash
 terraform plan
 terraform apply
 ```
 
 ---
 
-### **Option 2: Manual Setup**
+## 🗑️ **Cleanup (Remove Resources)**
 
-### **Step 1: Create Service Account Key**
-
-Using the existing **App Engine service account** (Editor role):
+When you want to remove all GCP resources:
 
 ```bash
-cd terraform_no_oidc/
-
-# Create key file
-gcloud iam service-accounts keys create appengine-sa-key.json \
-  --iam-account=agentic-ai-integration-490716@appspot.gserviceaccount.com \
-  --project=agentic-ai-integration-490716
+terraform destroy
 ```
 
-### **Step 2: Set Authentication**
+Type `yes` to confirm.
+
+**This will delete:**
+- Pub/Sub Topic
+- Pub/Sub Subscription
+- Log Sink
+
+**Your AWS Lambda is NOT affected** - it remains unchanged
+
+---
+
+## 🐛 **Troubleshooting**
+
+### **Error: "Application Default Credentials not found"**
+
+**Cause:** `GOOGLE_APPLICATION_CREDENTIALS` not set
+
+**Solution:**
+```bash
+# Make sure environment variable is set
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+
+# Then try again
+terraform plan
+```
+
+---
+
+### **Error: "appengine-sa-key.json: no such file"**
+
+**Cause:** Key file missing or wrong path
+
+**Solution:**
+```bash
+# Check file exists
+ls appengine-sa-key.json
+
+# If missing, ask admin for the file
+# Place it in terraform_no_oidc/ directory
+```
+
+---
+
+### **Error: "Permission denied"**
+
+**Cause:** Service account lacks permissions
+
+**Solution:**
+- Contact admin to verify service account has Editor role
+- Service account email: `agentic-ai-integration-490716@appspot.gserviceaccount.com`
+
+---
+
+### **No logs appearing in Lambda**
+
+**Possible causes:**
+
+1. **Filter too restrictive**
+   - Check `log_severity_filter` in `terraform.tfvars`
+   - Try removing filter temporarily: `log_severity_filter = []`
+
+2. **Wrong reasoning engine ID**
+   - Verify ID in `terraform.tfvars` is correct
+   - Ask admin for correct IDs
+
+3. **Lambda URL incorrect**
+   - Check `aws_lambda_url` in `terraform.tfvars`
+   - Must be complete HTTPS URL from AWS
+
+---
+
+## 📝 **Important Notes**
+
+### **Authentication in Future Sessions**
+
+Every time you open a new terminal, you must set the environment variable again:
 
 **Linux/Mac:**
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+export GOOGLE_APPLICATION_CREDENTIALS="/full/path/to/appengine-sa-key.json"
 ```
 
-**Windows PowerShell:**
+**Windows:**
 ```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\full\path\to\appengine-sa-key.json"
 ```
 
-**Windows CMD:**
-```cmd
-set GOOGLE_APPLICATION_CREDENTIALS=%cd%\appengine-sa-key.json
-```
+**Tip:** Add this to your shell profile to make it permanent
 
-### **Step 3: Update Configuration**
+---
 
+### **Security**
+
+- 🔒 Keep `appengine-sa-key.json` secure
+- ❌ Never commit it to git
+- ❌ Never share it publicly
+- ✅ Store in secure location
+- ✅ Delete when no longer needed
+
+---
+
+### **Multiple Environments**
+
+For different environments (dev, staging, prod):
+
+1. Create separate directories:
+   ```
+   terraform_no_oidc_dev/
+   terraform_no_oidc_staging/
+   terraform_no_oidc_prod/
+   ```
+
+2. Use different `terraform.tfvars` for each
+
+3. Use same service account key file for all
+
+---
+
+## ✅ **Quick Reference**
+
+### **Initial Setup:**
 ```bash
+cd terraform_no_oidc/
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
 cp terraform.tfvars.example terraform.tfvars
-notepad terraform.tfvars
-```
-
-Edit these values:
-```hcl
-# Your Existing AWS Lambda URL
-aws_lambda_url = "https://abc123xyz.lambda-url.us-east-1.on.aws"
-
-# Your Reasoning Engine IDs
-reasoning_engine_ids = [
-  "8213677864684355584"
-]
-
-# Cost Optimization
-log_severity_filter = ["ERROR", "CRITICAL"]
-```
-
-### **Step 4: Deploy GCP Infrastructure**
-
-```bash
+# Edit terraform.tfvars
 terraform init
-terraform plan    # Review what will be created
-terraform apply   # Type 'yes' to confirm
+terraform plan
+terraform apply
 ```
 
-**What gets created:**
-- ✅ Pub/Sub Topic: `reasoning-engine-logs-topic`
-- ✅ Pub/Sub Subscription: `reasoning-engine-to-lambda` (no OIDC)
-- ✅ Log Sink: `reasoning-engine-to-pubsub` (with filters)
-
----
-
-## 🆚 **Comparison with OIDC Version**
-
-| Feature | This (No OIDC) | terraform/ (With OIDC) |
-|---------|----------------|------------------------|
-| **Authentication** | ❌ None | ✅ JWT tokens |
-| **Service Account** | ❌ Not created | ✅ pubsub-oidc-invoker |
-| **Lambda Validation** | Not required | Required |
-| **Security** | ⚠️ Low | ✅ High |
-| **Use Case** | Testing only | Production |
-| **Setup Complexity** | Simple | Medium (bootstrap needed) |
-
----
-
-## 🔧 **Differences from OIDC Version**
-
-### **What's NOT Created:**
-
-1. ❌ **Service Account** (`pubsub-oidc-invoker`)
-   - No service account for OIDC token generation
-   
-2. ❌ **IAM Role Binding**
-   - No Token Creator role needed
-
-3. ❌ **Bootstrap Step**
-   - No terraform-deployer service account needed
-   - Use your personal GCP credentials directly
-
-### **What's Different:**
-
-**Pub/Sub Subscription:**
-```hcl
-# No OIDC (this version)
-push_config {
-  push_endpoint = var.aws_lambda_url
-  # No authentication
-}
-
-# With OIDC (../terraform/ version)
-push_config {
-  push_endpoint = var.aws_lambda_url
-  oidc_token {
-    service_account_email = google_service_account.pubsub_oidc_invoker.email
-    audience              = var.aws_lambda_url
-  }
-}
-```
-
----
-
-## 🧪 **Testing**
-
-### **1. Check GCP Resources:**
+### **Daily Usage:**
 ```bash
-# List Pub/Sub topics
-gcloud pubsub topics list
-
-# List subscriptions
-gcloud pubsub subscriptions list
-
-# Describe subscription (no OIDC config)
-gcloud pubsub subscriptions describe reasoning-engine-to-lambda
+cd terraform_no_oidc/
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+terraform plan
+terraform apply
 ```
 
-### **2. Test Message:**
+### **Cleanup:**
 ```bash
-gcloud pubsub topics publish reasoning-engine-logs-topic \
-  --message='{"test": "data"}'
-```
-
-### **3. Check Lambda Logs:**
-```bash
-# Should receive message without Authorization header
-aws logs tail /aws/lambda/YOUR-FUNCTION-NAME --follow
-```
-
----
-
-## 📊 **What This Terraform Does NOT Create**
-
-❌ AWS Lambda function (you already have it)
-❌ S3 buckets (already exist)
-❌ Kinesis streams (already exist)
-❌ OIDC service account (intentionally not created)
-❌ Portal26 routing logic (in your Lambda code)
-
----
-
-## 🔐 **Security Considerations**
-
-### **Risks:**
-
-1. **Public Lambda URL**
-   - Anyone with the URL can send requests
-   - No authentication validation
-
-2. **No Request Verification**
-   - Can't verify requests are from GCP
-   - Potential for spam/abuse
-
-3. **No Audit Trail**
-   - Can't identify who sent what
-
-### **Mitigations:**
-
-**Option 1: IP Allowlisting (AWS)**
-```
-Restrict Lambda URL to Google Cloud IP ranges
-```
-
-**Option 2: Upgrade to OIDC**
-```bash
-# Use the main terraform/ folder instead
-cd ../terraform/
-```
-
----
-
-## 🎯 **When to Use This vs OIDC**
-
-### **Use This (No OIDC) When:**
-- ✅ Testing/POC phase
-- ✅ Lambda doesn't validate JWT (yet)
-- ✅ Development environment
-- ✅ Quick proof-of-concept
-
-### **Use OIDC (../terraform/) When:**
-- ✅ Production deployment
-- ✅ Security is required
-- ✅ Lambda can validate JWT
-- ✅ Compliance requirements
-
----
-
-## 📁 **File Structure**
-
-```
-terraform_no_oidc/
-├── main.tf                          # Core Terraform config
-├── gcp_log_sink_pubsub.tf          # Log sink + Pub/Sub (no OIDC)
-├── terraform.tfvars.example         # Config example
-└── README.md                        # This file
-```
-
----
-
-## 🔄 **Migrating to OIDC Later**
-
-When ready for production:
-
-### **Step 1: Deploy OIDC version**
-```bash
-cd ../terraform/bootstrap/
-terraform init && terraform apply
-
-cd ..
-terraform init && terraform apply
-```
-
-### **Step 2: Update Lambda**
-Add JWT validation to your Lambda code (see `../lambda_with_oidc.py`)
-
-### **Step 3: Remove non-OIDC version**
-```bash
-cd ../terraform_no_oidc/
 terraform destroy
 ```
 
 ---
 
-## ✅ **Deployment Checklist**
-
-- [ ] AWS Lambda already exists and has business logic
-- [ ] Lambda **does NOT** validate JWT tokens (or you're testing)
-- [ ] Updated `terraform.tfvars` with Lambda URL
-- [ ] Updated reasoning engine IDs
-- [ ] Set log severity filter for cost savings
-- [ ] Understand security risks (no authentication)
-- [ ] Planning to upgrade to OIDC for production
-
----
-
-## 🆘 **Support**
+## 📞 **Getting Help**
 
 **Common Issues:**
 
-**"No logs appearing"**
-- Check filter settings (`log_severity_filter`)
-- Verify reasoning engine ID is correct
-- Check Lambda is receiving requests (CloudWatch logs)
+| Issue | Solution |
+|-------|----------|
+| No key file | Ask admin for `appengine-sa-key.json` |
+| Permission errors | Contact admin to check service account permissions |
+| Wrong Lambda URL | Get correct URL from AWS Console |
+| No logs appearing | Check filters and reasoning engine IDs |
 
-**"Lambda returning errors"**
-- Check Lambda expects plain HTTP POST (no Authorization header)
-- Verify message format is correct
-
-**"Want to add authentication"**
-- Use `../terraform/` folder with OIDC instead
-- See `../terraform/README.md` for setup
+**Contact your admin for:**
+- Service account key file
+- Reasoning engine IDs
+- AWS Lambda URL
+- GCP project access issues
 
 ---
 
-**Simple, no-auth setup for testing!** 🎯  
-**Remember: Upgrade to OIDC (`../terraform/`) for production!** 🔒
+**No gcloud CLI needed - just Terraform!** 🚀
