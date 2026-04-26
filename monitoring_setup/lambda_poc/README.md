@@ -19,95 +19,121 @@ Push to: YOUR EXISTING AWS LAMBDA
 
 ---
 
-## 📁 **Folder Structure**
+## 📁 **Two Setup Options**
 
+### **Option 1: terraform_no_oidc/ (Simpler - For Testing)**
+
+**Best for:**
+- ✅ Users without gcloud CLI
+- ✅ Quick testing/POC
+- ✅ Lambda doesn't validate JWT yet
+- ✅ Development environments
+
+**Security:** ⚠️ No authentication (public Lambda URL)
+
+**Setup:** Uses existing App Engine service account
 ```
-lambda_poc/
-├── README.md                           ← This file
-├── terraform_no_oidc/                  ← USE THIS
-│   ├── README.md                       # Complete user guide
-│   ├── ADMIN_GUIDE.md                  # Admin distribution guide
-│   ├── generate_package_for_users.sh   # Package generator
-│   ├── main.tf                         # Terraform config
-│   ├── gcp_log_sink_pubsub.tf         # GCP resources
-│   └── terraform.tfvars.example        # Config example
-│
-└── terraform_with_oidc_ARCHIVED/       ← ARCHIVED (reference only)
-    └── _DO_NOT_USE.txt                 # Why this is archived
+Email: agentic-ai-integration-490716@appspot.gserviceaccount.com
+Role: Editor
 ```
+
+---
+
+### **Option 2: terraform/ (Secure - For Production)**
+
+**Best for:**
+- ✅ Production deployments
+- ✅ Security/compliance required
+- ✅ Lambda validates JWT tokens
+- ✅ Need authentication
+
+**Security:** ✅ OIDC JWT tokens
+
+**Setup:** Requires bootstrap (creates OIDC service account)
+
+---
+
+## 🆚 **Quick Comparison**
+
+| Feature | terraform_no_oidc/ | terraform/ |
+|---------|-------------------|------------|
+| **Authentication** | ❌ None | ✅ OIDC JWT |
+| **gcloud CLI** | ❌ Not needed | ✅ Needed for bootstrap |
+| **Setup Steps** | 3 steps | 4 steps (bootstrap first) |
+| **Lambda Changes** | None | Must validate JWT |
+| **Security** | ⚠️ Low | ✅ High |
+| **Use Case** | Testing/POC | Production |
 
 ---
 
 ## 🚀 **Quick Start**
 
-### **For Users (Deploying Terraform):**
+### **For terraform_no_oidc/ (No OIDC):**
 
-1. **Get the package from admin**
-   - Contains Terraform files + service account key
+```bash
+cd terraform_no_oidc/
 
-2. **Follow the README**
-   ```bash
-   cd terraform_no_oidc/
-   # Read README.md for complete instructions
-   ```
+# Set authentication (uses existing service account)
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
 
-3. **3-step deployment:**
-   ```bash
-   # Set authentication
-   export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
-   
-   # Configure
-   cp terraform.tfvars.example terraform.tfvars
-   # Edit with your Lambda URL and Engine IDs
-   
-   # Deploy
-   terraform init && terraform apply
-   ```
+# Configure
+cp terraform.tfvars.example terraform.tfvars
+# Edit with Lambda URL and Engine IDs
 
-**Complete guide:** See `terraform_no_oidc/README.md`
+# Deploy
+terraform init && terraform apply
+```
+
+**Complete guide:** `terraform_no_oidc/README.md`
 
 ---
 
-### **For Admins (Distributing to Users):**
+### **For terraform/ (With OIDC):**
 
-1. **Generate package**
-   ```bash
-   cd terraform_no_oidc/
-   bash generate_package_for_users.sh  # Linux/Mac
-   # OR
-   generate_package_for_users.bat      # Windows
-   ```
+```bash
+# Step 1: Bootstrap (one-time)
+cd terraform/bootstrap/
+terraform init && terraform apply
+terraform output -raw service_account_key_file_content > terraform-sa-key.json
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/terraform-sa-key.json"
 
-2. **Distribute package**
-   - Package contains: Terraform files + service account key
-   - Share securely with users
-   - Provide Lambda URL and Reasoning Engine IDs
+# Step 2: Main infrastructure
+cd ..
+cp terraform.tfvars.example terraform.tfvars
+# Edit with Lambda URL and Engine IDs
+terraform init && terraform apply
+```
 
-**Complete guide:** See `terraform_no_oidc/ADMIN_GUIDE.md`
+**Complete guide:** `terraform/README.md`
 
 ---
 
-## 🔑 **Authentication**
+## 🔑 **Authentication Methods**
 
-Uses **existing App Engine service account**:
-```
-Email: agentic-ai-integration-490716@appspot.gserviceaccount.com
-Role: Editor (full project access)
-```
+### **terraform_no_oidc/ - Uses Existing Service Account**
 
-**Users need:**
-- ✅ Service account key file (`appengine-sa-key.json`)
-- ✅ Terraform installed
-- ❌ **NO gcloud CLI required!**
+**Service Account:** `agentic-ai-integration-490716@appspot.gserviceaccount.com`  
+**Key file:** Admin creates and distributes to users  
+**Lambda:** No JWT validation needed
+
+### **terraform/ - Creates New OIDC Service Account**
+
+**Service Account:** `pubsub-oidc-invoker@PROJECT.iam.gserviceaccount.com`  
+**Created by:** Bootstrap Terraform  
+**Lambda:** Must validate JWT tokens
 
 ---
 
 ## 📋 **What Gets Created**
 
-**GCP Resources:**
+**Both Options Create (GCP):**
 - Pub/Sub Topic: `reasoning-engine-logs-topic`
-- Pub/Sub Subscription: `reasoning-engine-to-lambda`
+- Pub/Sub Subscription
 - Log Sink: `reasoning-engine-to-pubsub`
+
+**terraform/ Also Creates:**
+- Service Account: `pubsub-oidc-invoker`
+- IAM Role Binding: Token Creator
 
 **AWS Resources:**
 - None (uses existing Lambda)
@@ -116,46 +142,66 @@ Role: Editor (full project access)
 
 ## 💰 **Cost Optimization**
 
-Use log filters to reduce costs by 80-90%:
+Both options support the same log filters:
 
 ```hcl
 # terraform.tfvars
-log_severity_filter = ["ERROR", "CRITICAL"]  # Only export errors
+log_severity_filter = ["ERROR", "CRITICAL"]  # 80-90% cost savings
 ```
 
 ---
 
 ## 📚 **Documentation**
 
-| File | Purpose | Audience |
-|------|---------|----------|
-| `terraform_no_oidc/README.md` | Complete setup guide | Users |
-| `terraform_no_oidc/ADMIN_GUIDE.md` | Distribution guide | Admins |
-| `terraform_no_oidc/terraform.tfvars.example` | Config template | Users |
+### **terraform_no_oidc/ (No OIDC):**
+- `README.md` - Complete setup guide for users without gcloud CLI
+- `ADMIN_GUIDE.md` - Admin guide for distributing packages
+- `generate_package_for_users.sh/bat` - Package generator scripts
+
+### **terraform/ (With OIDC):**
+- `README.md` - Main setup guide
+- `BOOTSTRAP_README.md` - Bootstrap service account setup
+- `TERRAFORM_PERMISSIONS.md` - Required permissions
+- `TERRAFORM_QUICK_START.md` - Quick deployment guide
+- `FILTERS_OVERVIEW.md` - Log filtering options
+
+---
+
+## 🎯 **Which One Should I Use?**
+
+```
+Do you have gcloud CLI installed?
+├─ No → Use terraform_no_oidc/
+└─ Yes → Do you need production security?
+         ├─ Yes → Use terraform/ (with OIDC)
+         └─ No → Use terraform_no_oidc/ (simpler)
+
+Can your Lambda validate JWT tokens?
+├─ No → Use terraform_no_oidc/
+└─ Yes → Use terraform/ (with OIDC)
+
+Is this for production?
+├─ Yes → Use terraform/ (with OIDC)
+└─ No → Use terraform_no_oidc/ (testing)
+```
 
 ---
 
 ## 🔧 **Requirements**
 
-**For Deployment:**
+### **For terraform_no_oidc/:**
 - Terraform >= 1.0
-- Service account key file (provided by admin)
+- Service account key file (`appengine-sa-key.json`)
 - AWS Lambda URL
 - Reasoning Engine IDs
+- ❌ No gcloud CLI needed
 
-**NOT Required:**
-- ❌ gcloud CLI
-- ❌ Personal GCP account
-- ❌ GCP Console access
-
----
-
-## ⚠️ **Important Notes**
-
-1. **No OIDC authentication** - Lambda URL is public
-2. **Testing/Development use** - For production, consider authentication
-3. **Existing AWS Lambda** - This setup assumes Lambda already exists
-4. **One setup method** - Use `terraform_no_oidc/` folder only
+### **For terraform/:**
+- Terraform >= 1.0
+- gcloud CLI (for bootstrap)
+- GCP Owner/Editor permissions
+- AWS Lambda URL
+- Reasoning Engine IDs
 
 ---
 
@@ -165,19 +211,37 @@ log_severity_filter = ["ERROR", "CRITICAL"]  # Only export errors
 
 | Issue | Solution |
 |-------|----------|
-| No key file | Contact admin for `appengine-sa-key.json` |
-| Permission errors | Verify service account has Editor role |
+| No key file (no-OIDC) | Contact admin for `appengine-sa-key.json` |
+| Permission denied (OIDC) | Run bootstrap first: `cd bootstrap/ && terraform apply` |
 | No logs appearing | Check filter settings and Engine IDs |
-| Wrong Lambda URL | Get correct URL from AWS Console |
+| JWT validation fails | Ensure Lambda validates tokens (OIDC only) |
 
 ---
 
 ## 📞 **Getting Started**
 
-**Users:** Go to `terraform_no_oidc/` and read `README.md`
+**Choose your path:**
 
-**Admins:** Go to `terraform_no_oidc/` and read `ADMIN_GUIDE.md`
+1. **For Users Without gcloud CLI:**  
+   → Go to `terraform_no_oidc/` and read `README.md`
+
+2. **For Production with Security:**  
+   → Go to `terraform/` and read `README.md`
+
+3. **For Admins Distributing to Users:**  
+   → Go to `terraform_no_oidc/` and read `ADMIN_GUIDE.md`
 
 ---
 
-**Simple, self-contained Terraform setup - no gcloud CLI needed!** 🚀
+## 🔄 **Migration Path**
+
+**Start with terraform_no_oidc/, upgrade to terraform/ later:**
+
+1. Test with `terraform_no_oidc/`
+2. Add JWT validation to your Lambda
+3. Deploy `terraform/` with OIDC
+4. Remove `terraform_no_oidc/` resources
+
+---
+
+**Two options available - choose based on your needs!** 🚀
