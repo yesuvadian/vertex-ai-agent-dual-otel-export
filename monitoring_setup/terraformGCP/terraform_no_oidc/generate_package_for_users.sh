@@ -77,7 +77,7 @@ cp main.tf "$PACKAGE_DIR/"
 cp gcp_log_sink_pubsub.tf "$PACKAGE_DIR/"
 cp terraform.tfvars.example "$PACKAGE_DIR/"
 cp "$KEY_FILE" "$PACKAGE_DIR/"
-cp README_FOR_USERS.md "$PACKAGE_DIR/README.md"
+cp README.md "$PACKAGE_DIR/README.md"
 
 # Create a quick start guide
 cat > "$PACKAGE_DIR/QUICK_START.txt" << 'EOF'

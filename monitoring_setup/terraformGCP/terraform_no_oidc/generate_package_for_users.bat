@@ -61,7 +61,7 @@ copy main.tf "%PACKAGE_DIR%\" >nul
 copy gcp_log_sink_pubsub.tf "%PACKAGE_DIR%\" >nul
 copy terraform.tfvars.example "%PACKAGE_DIR%\" >nul
 copy "%KEY_FILE%" "%PACKAGE_DIR%\" >nul
-copy README_FOR_USERS.md "%PACKAGE_DIR%\README.md" >nul
+copy README.md "%PACKAGE_DIR%\README.md" >nul
 
 REM Create quick start guide
 echo Creating QUICK_START.txt...
