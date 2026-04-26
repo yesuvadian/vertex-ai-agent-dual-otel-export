@@ -36,37 +36,90 @@ Push to: YOUR EXISTING AWS LAMBDA ✅
 
 ---
 
-## 🚀 **Quick Start**
+## 🚀 **Quick Start (Automated Setup)**
 
-### **1. Update Configuration**
+### **Option 1: Use Setup Script (Easiest)**
 
-Copy example config:
+**Linux/Mac:**
 ```bash
 cd terraform_no_oidc/
-cp terraform.tfvars.example terraform.tfvars
+bash setup_with_existing_sa.sh
 ```
 
-Edit `terraform.tfvars`:
-```hcl
-# GCP Configuration
-gcp_project_id = "agentic-ai-integration-490716"
-gcp_region     = "us-central1"
+**Windows:**
+```cmd
+cd terraform_no_oidc\
+setup_with_existing_sa.bat
+```
 
-# Your Existing AWS Lambda URL
-aws_lambda_url = "https://abc123xyz.lambda-url.us-east-1.on.aws"
+This script will:
+- ✅ Create key file for existing App Engine service account
+- ✅ Set authentication automatically
+- ✅ Create terraform.tfvars from example
 
-# Which Reasoning Engines to monitor
-reasoning_engine_ids = [
-  "8213677864684355584"
-]
-
-# Cost Optimization - Only export errors
-log_severity_filter = ["ERROR", "CRITICAL"]
+Then edit `terraform.tfvars` and run:
+```bash
+terraform init
+terraform plan
+terraform apply
 ```
 
 ---
 
-### **2. Deploy GCP Infrastructure**
+### **Option 2: Manual Setup**
+
+### **Step 1: Create Service Account Key**
+
+Using the existing **App Engine service account** (Editor role):
+
+```bash
+cd terraform_no_oidc/
+
+# Create key file
+gcloud iam service-accounts keys create appengine-sa-key.json \
+  --iam-account=agentic-ai-integration-490716@appspot.gserviceaccount.com \
+  --project=agentic-ai-integration-490716
+```
+
+### **Step 2: Set Authentication**
+
+**Linux/Mac:**
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+```
+
+**Windows PowerShell:**
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
+```
+
+**Windows CMD:**
+```cmd
+set GOOGLE_APPLICATION_CREDENTIALS=%cd%\appengine-sa-key.json
+```
+
+### **Step 3: Update Configuration**
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+notepad terraform.tfvars
+```
+
+Edit these values:
+```hcl
+# Your Existing AWS Lambda URL
+aws_lambda_url = "https://abc123xyz.lambda-url.us-east-1.on.aws"
+
+# Your Reasoning Engine IDs
+reasoning_engine_ids = [
+  "8213677864684355584"
+]
+
+# Cost Optimization
+log_severity_filter = ["ERROR", "CRITICAL"]
+```
+
+### **Step 4: Deploy GCP Infrastructure**
 
 ```bash
 terraform init
