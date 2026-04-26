@@ -1,5 +1,26 @@
 # How to Send to Clients
 
+## 0. Generate Service Account Key (First Time Only)
+
+If `appengine-sa-key.json` doesn't exist in `client_package/`:
+
+### From GCP Console:
+1. Go to: https://console.cloud.google.com/iam-admin/serviceaccounts?project=agentic-ai-integration-490716
+2. Click on: `agentic-ai-integration-490716@appspot.gserviceaccount.com`
+3. Go to **KEYS** tab
+4. Click **ADD KEY** → **Create new key**
+5. Select **JSON** → **CREATE**
+6. Downloaded file will be named like: `agentic-ai-integration-490716-abc123.json`
+7. Rename to: `appengine-sa-key.json`
+8. Move to: `client_package/appengine-sa-key.json`
+
+### Or from CLI:
+```bash
+cd client_package/
+gcloud iam service-accounts keys create appengine-sa-key.json \
+  --iam-account=agentic-ai-integration-490716@appspot.gserviceaccount.com
+```
+
 ## 1. Zip the Package
 
 ```bash
