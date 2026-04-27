@@ -60,6 +60,36 @@ variable "environment" {
   default     = "production"
 }
 
+variable "agent_ids" {
+  description = "List of Agent IDs to monitor (leave empty for all)"
+  type        = list(string)
+  default     = []
+}
+
+variable "log_severity_filter" {
+  description = "List of log severities to export (DEBUG, INFO, WARNING, ERROR, CRITICAL). Empty list exports all."
+  type        = list(string)
+  default     = []
+}
+
+variable "log_resource_types" {
+  description = "List of resource types to filter (e.g., cloud_run_revision, cloud_function). Empty list includes all."
+  type        = list(string)
+  default     = []
+}
+
+variable "custom_log_filter" {
+  description = "Custom log filter expression. If use_custom_filter_only=true, this overrides all other filters."
+  type        = string
+  default     = ""
+}
+
+variable "use_custom_filter_only" {
+  description = "If true, only use custom_log_filter and ignore all other filter settings"
+  type        = bool
+  default     = false
+}
+
 # ============================================================================
 # Outputs
 # ============================================================================
