@@ -22,13 +22,13 @@ if (-not (Test-Path $KEY_FILE)) {
 if (-not (Test-Path "terraform.tfvars")) {
     Write-Host "ERROR: terraform.tfvars not found!" -ForegroundColor Red
     Write-Host "Please copy and configure terraform.tfvars.example"
-    Write-Host "See CLIENT_GUIDE.md Step 3"
+    Write-Host "See CLIENT_GUIDE.md Step 2"
     exit 1
 }
 
 # Set credentials automatically
 $env:GOOGLE_APPLICATION_CREDENTIALS = "$pwd\$KEY_FILE"
-Write-Host "[1/3] ✓ Credentials set" -ForegroundColor Green
+Write-Host "[1/3] Credentials set" -ForegroundColor Green
 
 # Initialize Terraform
 Write-Host "[2/3] Initializing Terraform..."
