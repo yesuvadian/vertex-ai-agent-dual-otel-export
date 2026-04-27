@@ -26,10 +26,23 @@ Generate YOUR service account key:
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `terraform.tfvars` - update these values:
+Edit `terraform.tfvars` - **Required:**
 - `gcp_project_id` - YOUR GCP Project ID
-- `reasoning_engine_ids` - YOUR Reasoning Engine IDs
-- `aws_lambda_url` - (optional) Override if you have a different Lambda URL
+- `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
+
+**Optional:**
+- `aws_lambda_url` - Override if you have a different Lambda URL
+- `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`) for 80-90% cost savings
+- `agent_ids` - Filter by specific agent IDs
+- `log_resource_types` - Filter by resource types
+- `custom_log_filter` - Advanced custom filter expression
+
+**Example:**
+```hcl
+gcp_project_id = "my-gcp-project-123"
+reasoning_engine_ids = ["8213677864684355584", "9876543210987654321"]
+log_severity_filter = ["ERROR", "CRITICAL"]  # Uncomment for cost savings
+```
 
 ### 3. Deploy (One Command!)
 
