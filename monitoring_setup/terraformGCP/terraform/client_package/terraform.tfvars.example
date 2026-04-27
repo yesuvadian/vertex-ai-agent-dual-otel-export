@@ -1,22 +1,26 @@
 # ============================================================================
-# Terraform Variables - REQUIRED PARAMETERS ONLY
+# Terraform Variables - Update with YOUR values
 # ============================================================================
 # Copy this file to terraform.tfvars and update the values below
 # ============================================================================
 
-# REQUIRED: Your GCP Project ID
+# TODO: Replace with YOUR GCP Project ID
 gcp_project_id = "YOUR-GCP-PROJECT-ID"
 
-# REQUIRED: Your AWS Lambda URL (where GCP logs will be sent)
-aws_lambda_url = "https://YOUR-LAMBDA-URL.lambda-url.us-east-1.on.aws"
+# AWS Lambda URL (pre-configured, can be overridden if needed)
+aws_lambda_url = "https://SHARED-LAMBDA-URL.lambda-url.us-east-1.on.aws"
 
-# REQUIRED: Your Reasoning Engine IDs to monitor
+# TODO: Replace with YOUR Reasoning Engine IDs
 reasoning_engine_ids = [
-  "YOUR-ENGINE-ID"  # Your reasoning engine ID
+  "YOUR-ENGINE-ID"  # Get from: gcloud ai reasoning-engines list
 ]
 
 # ============================================================================
-# That's it! Update the values above, then run:
+# What to update:
+#   1. gcp_project_id - Your GCP Project ID
+#   2. reasoning_engine_ids - Your Reasoning Engine IDs
+#
+# Then run:
 #   terraform init
 #   terraform apply
 # ============================================================================

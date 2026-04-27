@@ -57,10 +57,10 @@ export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `terraform.tfvars` - update these 3 values:
+Edit `terraform.tfvars` - update these values:
 - `gcp_project_id` - YOUR GCP Project ID
-- `aws_lambda_url` - YOUR Lambda URL
-- `reasoning_engine_ids` - YOUR Engine IDs
+- `reasoning_engine_ids` - YOUR Reasoning Engine IDs
+- `aws_lambda_url` - (optional) Override if you have a different Lambda URL
 
 ### 4. Deploy
 
