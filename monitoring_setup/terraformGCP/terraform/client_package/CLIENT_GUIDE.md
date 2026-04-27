@@ -32,18 +32,12 @@ Edit `terraform.tfvars` - **Required:**
 
 **How to get Reasoning Engine ID:**
 
-**Option A: GCP Console**
 1. Go to: https://console.cloud.google.com/vertex-ai/reasoning-engines
 2. Select your project
 3. Click on your Reasoning Engine
 4. Copy the ID from the URL or details page
    - URL format: `.../reasoning-engines/REGION/REASONING_ENGINE_ID`
    - Example ID: `9162160575269044224`
-
-**Option B: gcloud CLI**
-```bash
-gcloud ai reasoning-engines list --location=us-central1
-```
 
 **Optional:**
 - `aws_lambda_url` - Override if you have a different Lambda URL
