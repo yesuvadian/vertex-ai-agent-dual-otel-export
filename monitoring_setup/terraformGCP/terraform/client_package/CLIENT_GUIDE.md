@@ -20,38 +20,7 @@ Generate YOUR service account key:
 5. **Replace** the example file with your downloaded key
 6. Rename to: `appengine-sa-key.json`
 
-### 2. Set Credentials
-
-**Option A: Run the script (easiest)**
-
-**Windows PowerShell:**
-```powershell
-.\set_credentials.ps1
-```
-
-**Windows CMD:**
-```cmd
-set_credentials.bat
-```
-
-**Git Bash / Linux / Mac:**
-```bash
-source set_credentials.sh
-```
-
-**Option B: Manual (if scripts don't work)**
-
-**Windows PowerShell:**
-```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
-```
-
-**Git Bash / Linux / Mac:**
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
-```
-
-### 3. Configure
+### 2. Configure
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
@@ -62,14 +31,45 @@ Edit `terraform.tfvars` - update these values:
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs
 - `aws_lambda_url` - (optional) Override if you have a different Lambda URL
 
-### 4. Deploy
+### 3. Deploy (One Command!)
 
+**Windows PowerShell:**
+```powershell
+.\deploy.ps1
+```
+
+**Windows CMD:**
+```cmd
+deploy.bat
+```
+
+**Git Bash / Linux / Mac:**
+```bash
+./deploy.sh
+```
+
+The script automatically:
+- Sets credentials
+- Initializes Terraform
+- Deploys infrastructure
+
+Type `yes` when Terraform asks to confirm.
+
+---
+
+**Manual Deployment (if scripts don't work):**
+
+Set credentials first:
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"  # Linux/Mac
+$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"     # PowerShell
+```
+
+Then deploy:
 ```bash
 terraform init
 terraform apply
 ```
-
-Type `yes` when prompted.
 
 ## What Gets Created
 

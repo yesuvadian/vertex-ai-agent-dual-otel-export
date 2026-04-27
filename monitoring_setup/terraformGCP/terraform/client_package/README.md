@@ -18,4 +18,11 @@ Copy to `terraform.tfvars` and update:
 
 ## Quick Start
 
-See `CLIENT_GUIDE.md` for complete step-by-step instructions.
+1. Replace `appengine-sa-key.json` with your key
+2. Configure `terraform.tfvars` with your values
+3. Run deployment script:
+   - Windows PowerShell: `.\deploy.ps1`
+   - Windows CMD: `deploy.bat`
+   - Linux/Mac: `./deploy.sh`
+
+See `CLIENT_GUIDE.md` for detailed instructions.
