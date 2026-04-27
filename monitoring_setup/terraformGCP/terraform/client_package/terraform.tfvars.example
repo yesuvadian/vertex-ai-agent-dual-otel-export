@@ -4,15 +4,15 @@
 # Copy this file to terraform.tfvars and update the values below
 # ============================================================================
 
-# REQUIRED: GCP Project ID
-gcp_project_id = "agentic-ai-integration-490716"
+# REQUIRED: Your GCP Project ID
+gcp_project_id = "YOUR-GCP-PROJECT-ID"
 
-# REQUIRED: AWS Lambda URL (where GCP logs will be sent)
+# REQUIRED: Your AWS Lambda URL (where GCP logs will be sent)
 aws_lambda_url = "https://YOUR-LAMBDA-URL.lambda-url.us-east-1.on.aws"
 
-# REQUIRED: Reasoning Engine IDs to monitor
+# REQUIRED: Your Reasoning Engine IDs to monitor
 reasoning_engine_ids = [
-  "8213677864684355584"  # Replace with your reasoning engine ID
+  "YOUR-ENGINE-ID"  # Your reasoning engine ID
 ]
 
 # ============================================================================
