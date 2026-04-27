@@ -30,6 +30,21 @@ Edit `terraform.tfvars` - **Required:**
 - `gcp_project_id` - YOUR GCP Project ID
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
 
+**How to get Reasoning Engine ID:**
+
+**Option A: GCP Console**
+1. Go to: https://console.cloud.google.com/vertex-ai/reasoning-engines
+2. Select your project
+3. Click on your Reasoning Engine
+4. Copy the ID from the URL or details page
+   - URL format: `.../reasoning-engines/REGION/REASONING_ENGINE_ID`
+   - Example ID: `9162160575269044224`
+
+**Option B: gcloud CLI**
+```bash
+gcloud ai reasoning-engines list --location=us-central1
+```
+
 **Optional:**
 - `aws_lambda_url` - Override if you have a different Lambda URL
 - `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`) for 80-90% cost savings
@@ -40,7 +55,7 @@ Edit `terraform.tfvars` - **Required:**
 **Example:**
 ```hcl
 gcp_project_id = "my-gcp-project-123"
-reasoning_engine_ids = ["8213677864684355584", "9876543210987654321"]
+reasoning_engine_ids = ["9162160575269044224", "8213677864684355584"]
 log_severity_filter = ["ERROR", "CRITICAL"]  # Uncomment for cost savings
 ```
 
