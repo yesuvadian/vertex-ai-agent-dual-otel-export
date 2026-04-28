@@ -19,39 +19,6 @@ This package deploys GCP infrastructure to forward Reasoning Engine logs to AWS 
 
 ---
 
-## ⚠️ IMPORTANT: Lambda Requirements
-
-Your AWS Lambda **MUST** validate OIDC JWT tokens before deploying this infrastructure.
-
-**Lambda must:**
-- Validate the `Authorization: Bearer <JWT>` header
-- Verify token issuer: `https://accounts.google.com`
-- Verify token audience matches your Lambda URL
-
-**See `LAMBDA_OIDC_GUIDE.md` for complete Lambda implementation code.**
-
-### Quick Lambda Example
-
-```python
-from google.oauth2 import id_token
-from google.auth.transport import requests
-
-def lambda_handler(event, context):
-    # Extract token from Authorization header
-    token = event['headers']['authorization'].replace('Bearer ', '')
-    
-    # Validate token
-    id_info = id_token.verify_oauth2_token(
-        token, 
-        requests.Request(), 
-        "https://your-lambda-url.lambda-url.us-east-1.on.aws"
-    )
-    
-    # Process authenticated request...
-```
-
----
-
 ## Prerequisites
 
 ### Required:
