@@ -1,0 +1,44 @@
+# ============================================================================
+# Terraform Variables - Update with YOUR values
+# ============================================================================
+# Copy this file to terraform.tfvars and update the values below
+# ============================================================================
+
+# TODO: Replace with YOUR GCP Project ID
+gcp_project_id = "YOUR-GCP-PROJECT-ID"
+
+# AWS Lambda URL (pre-configured, can be overridden if needed)
+aws_lambda_url = "https://SHARED-LAMBDA-URL.lambda-url.us-east-1.on.aws"
+
+# TODO: Replace with YOUR Reasoning Engine IDs
+reasoning_engine_ids = [
+  "YOUR-ENGINE-ID"  # Get from: gcloud ai reasoning-engines list
+]
+
+# ============================================================================
+# Optional: Log Filtering (Cost Optimization)
+# ============================================================================
+
+# Filter by severity (saves 80-90% costs)
+# Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# log_severity_filter = ["ERROR", "CRITICAL"]
+
+# Filter by specific Agent IDs
+# agent_ids = ["agent-123", "agent-456"]
+
+# Filter by resource types
+# log_resource_types = ["cloud_run_revision", "cloud_function"]
+
+# Custom filter expression (advanced)
+# custom_log_filter = "severity>=ERROR AND resource.type=\"cloud_run_revision\""
+
+# ============================================================================
+# What to update:
+#   1. gcp_project_id - Your GCP Project ID
+#   2. reasoning_engine_ids - Your Reasoning Engine IDs
+#   3. (optional) Uncomment filters above for cost savings
+#
+# Then run:
+#   terraform init
+#   terraform apply
+# ============================================================================

@@ -1,61 +1,37 @@
-# How to Send to Clients
+# How to Distribute to Clients
 
-## 0. Generate Service Account Key (First Time Only)
+## What Clients Need
 
-If `appengine-sa-key.json` doesn't exist in `client_package/`:
+Clients will deploy in **their own GCP project** using their own credentials.
 
-### From GCP Console:
-1. Go to: https://console.cloud.google.com/iam-admin/serviceaccounts?project=agentic-ai-integration-490716
-2. Click on: `agentic-ai-integration-490716@appspot.gserviceaccount.com`
-3. Go to **KEYS** tab
-4. Click **ADD KEY** → **Create new key**
-5. Select **JSON** → **CREATE**
-6. Downloaded file will be named like: `agentic-ai-integration-490716-abc123.json`
-7. Rename to: `appengine-sa-key.json`
-8. Move to: `client_package/appengine-sa-key.json`
+You send them:
+1. The `client_package/` folder (Terraform files + scripts)
+2. AWS Lambda URL (same for all clients)
+3. Their Reasoning Engine IDs
 
-### Or from CLI:
-```bash
-cd client_package/
-gcloud iam service-accounts keys create appengine-sa-key.json \
-  --iam-account=agentic-ai-integration-490716@appspot.gserviceaccount.com
-```
-
-## 1. Zip the Package
+## 1. Package the Client Files
 
 ```bash
+cd terraform/
 zip -r client-setup.zip client_package/
 ```
 
-Or just send the `client_package/` folder directly.
+Or send the `client_package/` folder directly.
 
-## 2. Send to Client
+**Note:** The `appengine-sa-key.json` in the package is an EXAMPLE. Clients will replace it with their own service account key from their own GCP project (see Step 1 in CLIENT_GUIDE.md).
 
-Send via secure channel:
-- `client-setup.zip` (or `client_package/` folder)
-- Their Lambda URL
-- Their Reasoning Engine IDs
+## 2. What Clients Will Do
 
-## 3. Email Template
+Clients follow CLIENT_GUIDE.md (3 simple steps):
+1. Download service account key from their GCP Console  
+2. Configure `terraform.tfvars` (project ID + Engine IDs)
+3. Run `deploy.sh` (Linux/Mac) or `deploy.ps1` (Windows)
 
-```
-Subject: GCP Log Sink Setup
+Done. Everything automated in the scripts.
 
-Hi [Client],
+## Security Notes
 
-Attached: client-setup.zip
-
-Your information:
-- Lambda URL: https://YOUR-LAMBDA-URL.on.aws
-- Engine ID: YOUR-ENGINE-ID
-
-Instructions inside CLIENT_GUIDE.md (3 steps, ~5 minutes)
-
-Requirements: Terraform only (no AWS/GCP CLI needed)
-```
-
-## Security
-
-- Key file gives Editor access to GCP project
-- Send via secure channel only
-- Rotate key every 90 days
+- Clients use their own service account keys (not yours)
+- Each client deploys to their own GCP project
+- All clients send logs to the same Lambda URL
+- Recommend clients rotate keys every 90 days
