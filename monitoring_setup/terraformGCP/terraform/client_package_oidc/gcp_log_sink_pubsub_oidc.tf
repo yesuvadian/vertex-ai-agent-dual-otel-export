@@ -130,25 +130,15 @@ locals {
     "severity>=${severity}"
   ]) : ""
 
-  # Build resource type filter
-  resource_type_filter = length(var.log_resource_types) > 0 ? join(" OR ", [
-    for resource_type in var.log_resource_types :
-    "resource.type=\"${resource_type}\""
-  ]) : ""
-
   # Combine all filters with AND logic
   all_filters = compact([
     local.reasoning_engine_filter != "" ? "(${local.reasoning_engine_filter})" : "",
     local.agent_id_filter != "" ? "(${local.agent_id_filter})" : "",
-    local.severity_filter != "" ? "(${local.severity_filter})" : "",
-    local.resource_type_filter != "" ? "(${local.resource_type_filter})" : "",
-    var.custom_log_filter != "" ? "(${var.custom_log_filter})" : ""
+    local.severity_filter != "" ? "(${local.severity_filter})" : ""
   ])
 
-  # Final filter: Use custom filter only if specified, otherwise combine all filters
-  log_sink_filter = var.use_custom_filter_only && var.custom_log_filter != "" ? var.custom_log_filter : (
-    length(local.all_filters) > 0 ? join(" AND ", local.all_filters) : "resource.type=\"*\""
-  )
+  # Final filter: Combine all filters
+  log_sink_filter = length(local.all_filters) > 0 ? join(" AND ", local.all_filters) : "resource.type=\"*\""
 }
 
 # ============================================================================

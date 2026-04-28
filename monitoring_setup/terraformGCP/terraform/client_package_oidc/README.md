@@ -102,8 +102,6 @@ Edit `terraform.tfvars` - **Required:**
 **Optional Filters (for cost savings):**
 - `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`)
 - `agent_ids` - Filter by specific agent IDs
-- `log_resource_types` - Filter by resource types
-- `custom_log_filter` - Advanced custom filter expression
 
 **Example Configuration:**
 ```hcl

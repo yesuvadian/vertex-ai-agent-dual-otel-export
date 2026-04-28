@@ -26,12 +26,6 @@ reasoning_engine_ids = [
 # Filter by specific Agent IDs
 # agent_ids = ["agent-123", "agent-456"]
 
-# Filter by resource types
-# log_resource_types = ["cloud_run_revision", "cloud_function"]
-
-# Custom filter expression (advanced)
-# custom_log_filter = "severity>=ERROR AND resource.type=\"cloud_run_revision\""
-
 # ============================================================================
 # What to update:
 #   1. gcp_project_id - Your GCP Project ID
