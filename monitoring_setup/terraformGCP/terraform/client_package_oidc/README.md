@@ -69,6 +69,10 @@ Your service account needs **THREE roles**:
 # Via gcloud CLI:
 gcloud projects add-iam-policy-binding YOUR-PROJECT-ID \
   --member="serviceAccount:YOUR-SA@YOUR-PROJECT-ID.iam.gserviceaccount.com" \
+  --role="roles/editor"
+
+gcloud projects add-iam-policy-binding YOUR-PROJECT-ID \
+  --member="serviceAccount:YOUR-SA@YOUR-PROJECT-ID.iam.gserviceaccount.com" \
   --role="roles/logging.admin"
 
 gcloud projects add-iam-policy-binding YOUR-PROJECT-ID \
@@ -80,10 +84,12 @@ Or via GCP Console:
 1. Go to: IAM & Admin → IAM
 2. Find your service account
 3. Click **Edit** → **ADD ANOTHER ROLE**
-4. Select: **Logging Admin**
+4. Select: **Editor**
 5. Click **ADD ANOTHER ROLE**
-6. Select: **Cloud Trace User**
-7. Click **SAVE**
+6. Select: **Logging Admin**
+7. Click **ADD ANOTHER ROLE**
+8. Select: **Cloud Trace User**
+9. Click **SAVE**
 
 ---
 
