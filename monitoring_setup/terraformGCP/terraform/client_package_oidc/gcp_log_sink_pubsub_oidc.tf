@@ -54,7 +54,13 @@ resource "google_pubsub_subscription" "reasoning_engine_to_lambda" {
   name    = "portal26-telemetry-sub-${var.customer_id}"
   topic   = google_pubsub_topic.reasoning_engine_logs.name
 
-  ack_deadline_seconds       = 10
+  # Acknowledgment deadline: endpoint must respond with HTTP 200 within 10 seconds
+  # If no 200 response within 10s, message is considered undelivered and retry starts
+  ack_deadline_seconds = 10
+
+  # Message retention: undelivered messages kept in queue for 7 days (604800 seconds)
+  # After 7 days without successful delivery, messages are permanently deleted
+  # Allows endpoint to recover from outages up to 7 days without losing data
   message_retention_duration = "604800s" # 7 days
 
   push_config {
@@ -67,9 +73,13 @@ resource "google_pubsub_subscription" "reasoning_engine_to_lambda" {
     }
   }
 
+  # Retry policy: exponential backoff for failed deliveries
+  # First retry after 10s, doubles each time (10s → 20s → 40s → 80s...)
+  # Maximum backoff capped at 600s (10 minutes)
+  # Retries continue until message is delivered or retention period (7 days) expires
   retry_policy {
-    minimum_backoff = "10s"
-    maximum_backoff = "600s"
+    minimum_backoff = "10s"  # Initial retry delay
+    maximum_backoff = "600s" # Maximum retry delay (10 minutes)
   }
 
   labels = {
