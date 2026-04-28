@@ -124,17 +124,10 @@ locals {
     "resource.labels.agent_id=\"${agent_id}\""
   ]) : ""
 
-  # Build severity filter
-  severity_filter = length(var.log_severity_filter) > 0 ? join(" OR ", [
-    for severity in var.log_severity_filter :
-    "severity>=${severity}"
-  ]) : ""
-
   # Combine all filters with AND logic
   all_filters = compact([
     local.reasoning_engine_filter != "" ? "(${local.reasoning_engine_filter})" : "",
-    local.agent_id_filter != "" ? "(${local.agent_id_filter})" : "",
-    local.severity_filter != "" ? "(${local.severity_filter})" : ""
+    local.agent_id_filter != "" ? "(${local.agent_id_filter})" : ""
   ])
 
   # Final filter: Combine all filters

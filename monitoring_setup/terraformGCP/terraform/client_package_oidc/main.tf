@@ -66,12 +66,6 @@ variable "agent_ids" {
   default     = []
 }
 
-variable "log_severity_filter" {
-  description = "List of log severities to export (DEBUG, INFO, WARNING, ERROR, CRITICAL). Empty list exports all."
-  type        = list(string)
-  default     = []
-}
-
 
 # ============================================================================
 # Outputs

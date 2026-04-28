@@ -90,8 +90,7 @@ Edit `terraform.tfvars` with YOUR values:
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
 - `aws_lambda_url` - YOUR Lambda URL
 
-**Optional (for cost savings):**
-- `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`)
+**Optional:**
 - `agent_ids` - Filter by specific agent IDs
 
 **How to get Reasoning Engine ID:**
@@ -108,7 +107,7 @@ Edit `terraform.tfvars` with YOUR values:
 gcp_project_id = "my-gcp-project-123"
 reasoning_engine_ids = ["9162160575269044224"]
 aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws"
-log_severity_filter = ["ERROR", "CRITICAL"]  # Optional: 80-90% cost savings
+agent_ids = ["agent-123"]  # Optional: filter by specific agents
 ```
 
 ### Step 3: Set Service Account Credentials
