@@ -9,7 +9,6 @@ This package deploys GCP infrastructure to forward Reasoning Engine logs to AWS 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
-- [Detailed Setup Instructions](#detailed-setup-instructions)
 - [What Gets Created](#what-gets-created)
 - [Security Features](#security-features)
 - [Testing](#testing)
@@ -65,7 +64,7 @@ Or via GCP Console:
 
 ## Quick Start
 
-### 1. Get Service Account Key
+### Step 1: Get Service Account Key
 
 **The included `appengine-sa-key.json` is an EXAMPLE only.**
 
@@ -73,22 +72,27 @@ Generate YOUR service account key:
 
 1. Go to: https://console.cloud.google.com/iam-admin/serviceaccounts
 2. Select YOUR GCP project
-3. Click on your service account (with Editor role)
+3. Click on your service account (with Editor + Logging Admin roles)
 4. **KEYS** tab → **ADD KEY** → **Create new key** → **JSON**
 5. **Replace** the example file with your downloaded key
 6. Rename to: `appengine-sa-key.json`
 
-### 2. Configure
+### Step 2: Configure Terraform Variables
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with YOUR values
 ```
 
-Edit `terraform.tfvars` - **Required:**
+Edit `terraform.tfvars` with YOUR values:
+
+**Required:**
 - `gcp_project_id` - YOUR GCP Project ID
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
-- `aws_lambda_url` - YOUR Lambda URL (must support OIDC!)
+- `aws_lambda_url` - YOUR Lambda URL
+
+**Optional (for cost savings):**
+- `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`)
+- `agent_ids` - Filter by specific agent IDs
 
 **How to get Reasoning Engine ID:**
 
@@ -99,66 +103,55 @@ Edit `terraform.tfvars` - **Required:**
    - URL format: `.../reasoning-engines/REGION/REASONING_ENGINE_ID`
    - Example ID: `9162160575269044224`
 
-**Optional Filters (for cost savings):**
-- `log_severity_filter` - Filter by severity (e.g., `["ERROR", "CRITICAL"]`)
-- `agent_ids` - Filter by specific agent IDs
-
 **Example Configuration:**
 ```hcl
 gcp_project_id = "my-gcp-project-123"
-reasoning_engine_ids = ["9162160575269044224", "8213677864684355584"]
+reasoning_engine_ids = ["9162160575269044224"]
 aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws"
 log_severity_filter = ["ERROR", "CRITICAL"]  # Optional: 80-90% cost savings
 ```
 
-### 3. Deploy (One Command!)
+### Step 3: Set Service Account Credentials
 
-Choose your platform:
+**Linux/Mac/Git Bash:**
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
+```
 
 **Windows PowerShell:**
 ```powershell
-.\deploy.ps1
+$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
 ```
 
 **Windows CMD:**
 ```cmd
-deploy.bat
+set GOOGLE_APPLICATION_CREDENTIALS=%cd%\appengine-sa-key.json
 ```
 
-**Git Bash / Linux / Mac:**
+### Step 4: Deploy Infrastructure
+
 ```bash
-./deploy.sh
-```
+# Initialize Terraform
+terraform init
 
-The script automatically:
-- Sets credentials
-- Initializes Terraform
-- Deploys infrastructure (including OIDC service account)
+# Review the deployment plan
+terraform plan
+
+# Deploy
+terraform apply
+```
 
 Type `yes` when Terraform asks to confirm.
 
 ---
 
-## Detailed Setup Instructions
+## Deployment Complete
 
-### Manual Deployment (if scripts don't work)
-
-**Step 1: Set credentials**
-
-```bash
-# Linux/Mac
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
-
-# PowerShell
-$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
-```
-
-**Step 2: Deploy**
-
-```bash
-terraform init
-terraform apply
-```
+After deployment, Terraform will output:
+- Service Account email (for OIDC)
+- Pub/Sub Topic and Subscription names
+- Log Sink name
+- GCP Console links
 
 ---
 
@@ -317,34 +310,19 @@ gcloud iam service-accounts get-iam-policy pubsub-oidc-invoker@PROJECT_ID.iam.gs
 
 ## Cleanup
 
-### Option 1: Terraform Destroy (Recommended)
+To remove all created resources:
 
 ```bash
 terraform destroy
 ```
 
-This removes:
-- Service account
+Type `yes` when prompted to confirm.
+
+This will remove:
+- Service account (`pubsub-oidc-invoker`)
 - Pub/Sub subscription and topic
 - Log sink
 - All IAM bindings
-
-### Option 2: Cleanup Scripts
-
-**PowerShell:**
-```powershell
-.\cleanup-with-user-account.ps1
-```
-
-**Bash:**
-```bash
-./cleanup-with-user-account.sh
-```
-
-**CMD:**
-```cmd
-cleanup-with-user-account.bat
-```
 
 ---
 
@@ -385,6 +363,23 @@ If you just want to test without OIDC (not recommended for production):
 - **Lambda Issues**: Check `LAMBDA_OIDC_GUIDE.md`
 - **Authentication Issues**: Review OIDC token validation section
 - **Terraform Errors**: Check GCP permissions
+
+---
+
+## 📚 Files in This Package
+
+| File | Purpose |
+|------|---------|
+| `README.md` | This guide - complete setup instructions |
+| `LAMBDA_OIDC_GUIDE.md` | Lambda OIDC implementation with code examples |
+| `main.tf` | Terraform variables, provider, and outputs |
+| `gcp_log_sink_pubsub_oidc.tf` | GCP infrastructure definitions |
+| `terraform.tfvars.example` | Configuration template |
+| `appengine-sa-key.json` | Service account key (EXAMPLE - replace with yours) |
+
+---
+
+**Ready to deploy?** Follow the Quick Start steps above!
 
 ---
 
