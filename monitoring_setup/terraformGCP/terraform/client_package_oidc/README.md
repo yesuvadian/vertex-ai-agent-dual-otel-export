@@ -1,8 +1,4 @@
-# GCP to Lambda Log Forwarding with OIDC Authentication - Complete Guide
-
-## 🔐 Secure Version - OIDC Authentication Required
-
-This package deploys GCP infrastructure to forward Reasoning Engine logs to AWS Lambda **with OIDC authentication**. Your Lambda must validate JWT tokens.
+# GCP Log Forwarding with OIDC Authentication - Complete Guide
 
 ---
 
@@ -23,13 +19,34 @@ This package deploys GCP infrastructure to forward Reasoning Engine logs to AWS 
 - [ ] Terraform installed
 - [ ] GCP Project with Reasoning Engines
 - [ ] Service Account with **Editor** and **Logging Admin** roles ⚠️
-- [ ] AWS Lambda URL
-- [ ] **Lambda has OIDC validation enabled** ⚠️
+- [ ] Destination endpoint URL (with OIDC validation enabled)
+- [ ] **Reasoning Engine must log to Google Cloud Logging** ⚠️
 
 ### Files Needed:
 - Service account key JSON file
-- Lambda URL (must support OIDC)
+- Destination endpoint URL
 - Reasoning Engine IDs
+
+### ⚠️ IMPORTANT: Reasoning Engine Requirements
+
+**This setup ONLY works if your Reasoning Engine logs to Google Cloud Logging (default behavior).**
+
+**Supported:**
+- ✅ Reasoning Engines using Vertex AI Agent Builder SDK (default Cloud Logging)
+- ✅ Reasoning Engines with standard Cloud Logging integration
+- ✅ Default Vertex AI instrumentation
+
+**NOT Supported:**
+- ❌ Reasoning Engines with **custom OpenTelemetry (OTEL) exporters**
+- ❌ Agents sending logs directly to external systems (bypassing Cloud Logging)
+- ❌ Custom telemetry implementations that don't write to Cloud Logging
+
+**How to verify:**
+1. Go to: https://console.cloud.google.com/logs/query
+2. Select your GCP project
+3. Run query: `resource.labels.reasoning_engine_id="YOUR_ENGINE_ID"`
+4. You should see logs appear when your Reasoning Engine runs
+5. If no logs appear → Your setup uses custom OTEL and **this solution won't work**
 
 ### ⚠️ CRITICAL: Service Account Permissions
 
@@ -86,8 +103,9 @@ Edit `terraform.tfvars` with YOUR values:
 
 **Required:**
 - `gcp_project_id` - YOUR GCP Project ID
+- `customer_id` - YOUR Customer ID
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
-- `aws_lambda_url` - YOUR Lambda URL
+- `aws_lambda_url` - YOUR destination endpoint URL
 
 **Optional:**
 - `agent_ids` - Filter by specific agent IDs
@@ -104,8 +122,9 @@ Edit `terraform.tfvars` with YOUR values:
 **Example Configuration:**
 ```hcl
 gcp_project_id = "my-gcp-project-123"
+customer_id = "customer-001"
 reasoning_engine_ids = ["9162160575269044224"]
-aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws"
+aws_lambda_url = "https://your-endpoint-url.example.com"
 agent_ids = ["agent-123"]  # Optional: filter by specific agents
 ```
 
@@ -148,131 +167,23 @@ In YOUR GCP project:
 - **Permissions**: Token Creator role (automatically managed by GCP Pub/Sub)
 
 ### 2. Pub/Sub Topic
-- **Name**: `reasoning-engine-logs-topic`
+- **Name**: `portal26-telemetry-{customer-id}`
 - **Purpose**: Receives logs from Log Sink
 - **Retention**: 7-day message retention
 
 ### 3. Pub/Sub Subscription
-- **Name**: `reasoning-engine-to-lambda-oidc`
-- **Purpose**: Pushes to your Lambda with OIDC token
+- **Name**: `portal26-telemetry-sub-{customer-id}`
+- **Purpose**: Pushes to destination endpoint with OIDC token
 - **Features**: Automatic retry on failure
 
 ### 4. Log Sink
-- **Name**: `reasoning-engine-to-pubsub-oidc`
+- **Name**: `portal26-sink-{customer-id}`
 - **Purpose**: Routes Reasoning Engine logs
 - **Features**: Configurable filters
 
 ---
 
-## Security Features
-
-### ✅ OIDC Authentication
-Every request includes a JWT token in the Authorization header.
-
-### ✅ Token Validation
-Lambda must verify:
-- Token signature (signed by Google)
-- Token issuer (`https://accounts.google.com`)
-- Token audience (matches Lambda URL)
-- Token expiration (1 hour validity)
-
-### ✅ Service Account Isolation
-Dedicated service account for token generation, separate from deployment account.
-
-### ✅ Audience Binding
-Token is bound to specific Lambda URL - cannot be reused elsewhere.
-
 ---
-
-## Testing
-
-After deployment:
-
-### 1. Generate Test Log
-Trigger a log in your Reasoning Engine that matches your filter criteria.
-
-### 2. Check Lambda CloudWatch Logs
-Look for incoming requests with OIDC token in headers:
-```json
-{
-  "headers": {
-    "authorization": "Bearer eyJhbGc..."
-  }
-}
-```
-
-### 3. Verify Authentication
-Lambda should successfully validate and process the request.
-
-### Test Checklist:
-- [ ] Log appears in GCP Log Sink
-- [ ] Message arrives in Pub/Sub subscription
-- [ ] Lambda receives request with Authorization header
-- [ ] Lambda validates token successfully
-- [ ] Lambda processes log data
-
----
-
-## Troubleshooting
-
-### Lambda returns 401/403
-
-**Cause**: OIDC token validation failed
-
-**Check:**
-- ✅ Token audience matches Lambda URL **exactly** (no trailing slash!)
-- ✅ Lambda has `google-auth` package installed
-- ✅ Lambda has internet access to fetch Google public keys
-- ✅ Check Lambda logs for JWT validation errors
-
-**Solution:**
-```python
-# In Lambda, verify audience matches exactly:
-EXPECTED_AUDIENCE = "https://your-lambda-url.lambda-url.us-east-1.on.aws"
-id_info = id_token.verify_oauth2_token(token, requests.Request(), EXPECTED_AUDIENCE)
-```
-
-### No logs arriving
-
-**Cause**: Pub/Sub can't reach Lambda or filter is wrong
-
-**Check:**
-- ✅ Verify Reasoning Engine ID is correct
-- ✅ Check GCP Log Sink filter in Cloud Console
-- ✅ Test Pub/Sub subscription manually
-- ✅ Lambda URL is correct in `terraform.tfvars`
-- ✅ Lambda returns 200 for valid tokens
-
-**Debug:**
-```bash
-# Check Pub/Sub subscription errors
-gcloud pubsub subscriptions pull reasoning-engine-to-lambda-oidc --limit=1
-```
-
-### OIDC token invalid
-
-**Cause**: Token signature invalid or expired
-
-**Check:**
-- ✅ Service account has Token Creator role (automatically granted)
-- ✅ Check service account email matches subscription config
-- ✅ Ensure audience matches Lambda URL exactly
-- ✅ Token hasn't expired (valid 1 hour)
-- ✅ Verify issuer: `https://accounts.google.com`
-
-**Debug:**
-```bash
-# Check service account IAM policy
-gcloud iam service-accounts get-iam-policy pubsub-oidc-invoker@PROJECT_ID.iam.gserviceaccount.com
-```
-
-### Terraform deployment fails
-
-**Check:**
-- ✅ Service account has Editor role
-- ✅ `appengine-sa-key.json` is valid
-- ✅ All required fields in `terraform.tfvars` are filled
-- ✅ Project ID is correct
 
 ---
 
@@ -294,35 +205,6 @@ This will remove:
 
 ---
 
-## Next Steps
-
-1. ✅ **Implement Lambda OIDC validation** (see `LAMBDA_OIDC_GUIDE.md`)
-2. ✅ **Deploy Lambda** with dependencies (`google-auth`, `cryptography`)
-3. ✅ **Deploy this infrastructure** using steps above
-4. ✅ **Test with sample logs**
-5. ✅ **Monitor for authentication errors** in CloudWatch
-6. ✅ **Set up alerting** on Lambda failures
-
----
-
-## 💡 Tips
-
-- **Audience must match exactly** - No trailing slashes!
-- **Monitor auth failures** - Set up CloudWatch alarms
-- **Rotate service account keys** - Every 90 days
-- **Test OIDC first** - Validate locally before deploying
-- **Keep Lambda dependencies updated** - `google-auth` package
-
----
-
-
-## 📞 Support
-
-- **Setup Issues**: Review this guide
-- **Lambda Issues**: Check `LAMBDA_OIDC_GUIDE.md`
-- **Authentication Issues**: Review OIDC token validation section
-- **Terraform Errors**: Check GCP permissions
-
 ---
 
 ## 📚 Files in This Package
@@ -330,7 +212,6 @@ This will remove:
 | File | Purpose |
 |------|---------|
 | `README.md` | This guide - complete setup instructions |
-| `LAMBDA_OIDC_GUIDE.md` | Lambda OIDC implementation with code examples |
 | `main.tf` | Terraform variables, provider, and outputs |
 | `gcp_log_sink_pubsub_oidc.tf` | GCP infrastructure definitions |
 | `terraform.tfvars.example` | Configuration template |
@@ -338,52 +219,3 @@ This will remove:
 
 ---
 
-**Ready to deploy?** Follow the Quick Start steps above!
-
----
-
-## 📚 Additional Documentation
-
-| File | Purpose |
-|------|---------|
-| `LAMBDA_OIDC_GUIDE.md` | Complete Lambda OIDC implementation with code examples |
-| `terraform.tfvars.example` | Configuration template |
-| `main.tf` | Terraform variables and outputs |
-| `gcp_log_sink_pubsub_oidc.tf` | Infrastructure definitions |
-
----
-
-## 📦 For Administrators: Distributing to Clients
-
-If you're distributing this package to clients, they will deploy in **their own GCP project** using their own credentials.
-
-### What to Send Clients:
-1. This `client_package_oidc/` folder (all files)
-2. AWS Lambda URL (shared Lambda for all clients)
-3. Their specific Reasoning Engine IDs
-
-### What Clients Will Do:
-1. Generate their own service account key from their GCP Console
-2. Replace the example `appengine-sa-key.json` with their real key
-3. Configure `terraform.tfvars` with their project ID and Engine IDs
-4. Run deployment script for their platform
-
-### Security Model:
-- ✅ Each client uses their own service account key
-- ✅ Each client deploys to their own GCP project
-- ✅ All clients send logs to the same Lambda URL (with OIDC)
-- ✅ Lambda validates each client's OIDC token
-- ✅ Recommend 90-day key rotation
-
-### Distribution Methods:
-```bash
-# Create a ZIP file
-zip -r client-setup-oidc.zip client_package_oidc/
-
-# Or share via Git repository
-# Clients can clone and use directly
-```
-
----
-
-**Ready to deploy?** Make sure your Lambda has OIDC validation, then follow the Quick Start section above!

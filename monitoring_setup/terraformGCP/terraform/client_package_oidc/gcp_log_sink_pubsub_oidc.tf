@@ -33,13 +33,14 @@ resource "google_service_account" "pubsub_oidc_invoker" {
 # ============================================================================
 resource "google_pubsub_topic" "reasoning_engine_logs" {
   project = var.gcp_project_id
-  name    = "reasoning-engine-logs-topic"
+  name    = "portal26-telemetry-${var.customer_id}"
 
   labels = {
     purpose     = "agent-observability"
     destination = "aws-lambda"
     environment = var.environment
     auth_method = "oidc"
+    customer_id = var.customer_id
   }
 
   message_retention_duration = "604800s" # 7 days
@@ -50,7 +51,7 @@ resource "google_pubsub_topic" "reasoning_engine_logs" {
 # ============================================================================
 resource "google_pubsub_subscription" "reasoning_engine_to_lambda" {
   project = var.gcp_project_id
-  name    = "reasoning-engine-to-lambda-oidc"
+  name    = "portal26-telemetry-sub-${var.customer_id}"
   topic   = google_pubsub_topic.reasoning_engine_logs.name
 
   ack_deadline_seconds       = 10
@@ -76,6 +77,7 @@ resource "google_pubsub_subscription" "reasoning_engine_to_lambda" {
     destination = "aws-lambda"
     environment = var.environment
     auth_method = "oidc"
+    customer_id = var.customer_id
   }
 
   # No explicit dependency needed - GCP Pub/Sub handles OIDC token generation
@@ -86,7 +88,7 @@ resource "google_pubsub_subscription" "reasoning_engine_to_lambda" {
 # ============================================================================
 resource "google_logging_project_sink" "reasoning_engine_to_pubsub" {
   project = var.gcp_project_id
-  name    = "reasoning-engine-to-pubsub-oidc"
+  name    = "portal26-sink-${var.customer_id}"
 
   # Destination: Pub/Sub Topic
   destination = "pubsub.googleapis.com/projects/${var.gcp_project_id}/topics/${google_pubsub_topic.reasoning_engine_logs.name}"
@@ -112,6 +114,9 @@ resource "google_pubsub_topic_iam_member" "log_sink_publisher" {
 # Local Variables - Filter Construction
 # ============================================================================
 locals {
+  # Standard base filter (always applied)
+  standard_base_filter = "resource.type=\"aiplatform.googleapis.com/ReasoningEngine\" OR logName=~\"gen_ai\\.\" OR labels.agent_engine=true OR jsonPayload.source=\"vertex-ai-agent\""
+
   # Build reasoning engine filter
   reasoning_engine_filter = length(var.reasoning_engine_ids) > 0 ? join(" OR ", [
     for engine_id in var.reasoning_engine_ids :
@@ -126,12 +131,13 @@ locals {
 
   # Combine all filters with AND logic
   all_filters = compact([
+    "(${local.standard_base_filter})",
     local.reasoning_engine_filter != "" ? "(${local.reasoning_engine_filter})" : "",
     local.agent_id_filter != "" ? "(${local.agent_id_filter})" : ""
   ])
 
   # Final filter: Combine all filters
-  log_sink_filter = length(local.all_filters) > 0 ? join(" AND ", local.all_filters) : "resource.type=\"*\""
+  log_sink_filter = join(" AND ", local.all_filters)
 }
 
 # ============================================================================

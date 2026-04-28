@@ -45,6 +45,11 @@ variable "gcp_region" {
   default     = "us-central1"
 }
 
+variable "customer_id" {
+  description = "Customer ID for resource naming"
+  type        = string
+}
+
 variable "aws_lambda_url" {
   description = "AWS Lambda Function URL with OIDC support (where GCP logs will be pushed)"
   type        = string

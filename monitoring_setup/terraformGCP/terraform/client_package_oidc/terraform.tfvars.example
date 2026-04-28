@@ -7,6 +7,9 @@
 # TODO: Replace with YOUR GCP Project ID
 gcp_project_id = "YOUR-GCP-PROJECT-ID"
 
+# TODO: Replace with YOUR Customer ID
+customer_id = "YOUR-CUSTOMER-ID"
+
 # AWS Lambda URL (pre-configured, can be overridden if needed)
 aws_lambda_url = "https://SHARED-LAMBDA-URL.lambda-url.us-east-1.on.aws"
 
@@ -16,17 +19,10 @@ reasoning_engine_ids = [
 ]
 
 # ============================================================================
-# Optional: Log Filtering
-# ============================================================================
-
-# Filter by specific Agent IDs
-# agent_ids = ["agent-123", "agent-456"]
-
-# ============================================================================
 # What to update:
 #   1. gcp_project_id - Your GCP Project ID
-#   2. reasoning_engine_ids - Your Reasoning Engine IDs
-#   3. (optional) Uncomment filters above for cost savings
+#   2. customer_id - Your Customer ID
+#   3. reasoning_engine_ids - Your Reasoning Engine IDs
 #
 # Then run:
 #   terraform init
