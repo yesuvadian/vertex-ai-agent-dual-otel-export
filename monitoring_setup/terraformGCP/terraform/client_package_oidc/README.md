@@ -18,7 +18,7 @@
 ### Required:
 - [ ] Terraform installed
 - [ ] GCP Project with Reasoning Engines
-- [ ] Service Account with **Editor** and **Logging Admin** roles ⚠️
+- [ ] Service Account with **Editor**, **Logging Admin**, and **Cloud Trace User** roles ⚠️
 - [ ] Destination endpoint URL (with OIDC validation enabled)
 - [ ] **Reasoning Engine must log to Google Cloud Logging** ⚠️
 
@@ -50,7 +50,7 @@
 
 ### ⚠️ CRITICAL: Service Account Permissions
 
-Your service account needs **TWO roles**:
+Your service account needs **THREE roles**:
 
 1. **Editor** (`roles/editor`)
    - Create/modify Pub/Sub resources
@@ -60,13 +60,20 @@ Your service account needs **TWO roles**:
    - Create/modify log sinks
    - **Editor role does NOT include this!**
 
-**To add Logging Admin role:**
+3. **Cloud Trace User** (`roles/cloudtrace.user`)
+   - Collect trace/telemetry data from Reasoning Engine
+
+**To add required roles:**
 
 ```bash
 # Via gcloud CLI:
 gcloud projects add-iam-policy-binding YOUR-PROJECT-ID \
   --member="serviceAccount:YOUR-SA@YOUR-PROJECT-ID.iam.gserviceaccount.com" \
   --role="roles/logging.admin"
+
+gcloud projects add-iam-policy-binding YOUR-PROJECT-ID \
+  --member="serviceAccount:YOUR-SA@YOUR-PROJECT-ID.iam.gserviceaccount.com" \
+  --role="roles/cloudtrace.user"
 ```
 
 Or via GCP Console:
@@ -74,7 +81,9 @@ Or via GCP Console:
 2. Find your service account
 3. Click **Edit** → **ADD ANOTHER ROLE**
 4. Select: **Logging Admin**
-5. Click **SAVE**
+5. Click **ADD ANOTHER ROLE**
+6. Select: **Cloud Trace User**
+7. Click **SAVE**
 
 ---
 
@@ -107,9 +116,6 @@ Edit `terraform.tfvars` with YOUR values:
 - `reasoning_engine_ids` - YOUR Reasoning Engine IDs (list format)
 - `aws_lambda_url` - YOUR destination endpoint URL
 
-**Optional:**
-- `agent_ids` - Filter by specific agent IDs
-
 **How to get Reasoning Engine ID:**
 
 1. Go to: https://console.cloud.google.com/vertex-ai/reasoning-engines
@@ -125,7 +131,6 @@ gcp_project_id = "my-gcp-project-123"
 customer_id = "customer-001"
 reasoning_engine_ids = ["9162160575269044224"]
 aws_lambda_url = "https://your-endpoint-url.example.com"
-agent_ids = ["agent-123"]  # Optional: filter by specific agents
 ```
 
 ### Step 3: Deploy Infrastructure
@@ -179,7 +184,11 @@ In YOUR GCP project:
 ### 4. Log Sink
 - **Name**: `portal26-sink-{customer-id}`
 - **Purpose**: Routes Reasoning Engine logs
-- **Features**: Configurable filters
+- **Default Filter**: Captures Reasoning Engine and Vertex AI agent logs
+  - `resource.type="aiplatform.googleapis.com/ReasoningEngine"`
+  - `logName=~"gen_ai\."`
+  - `labels.agent_engine=true`
+  - `jsonPayload.source="vertex-ai-agent"`
 
 ---
 
