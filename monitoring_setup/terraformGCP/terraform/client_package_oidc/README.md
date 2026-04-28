@@ -14,7 +14,6 @@ This package deploys GCP infrastructure to forward Reasoning Engine logs to AWS 
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Cleanup](#cleanup)
-- [Comparison with No-Auth](#comparison-oidc-vs-no-auth)
 
 ---
 
@@ -185,21 +184,6 @@ Token is bound to specific Lambda URL - cannot be reused elsewhere.
 
 ---
 
-## Comparison: OIDC vs No-Auth
-
-| Feature | OIDC (This Package) | No-Auth (client_package) |
-|---------|-------------------|-------------------------|
-| Security | ✅ JWT token validation | ❌ Public endpoint |
-| Lambda Complexity | Medium (token validation) | Simple (no validation) |
-| Setup Complexity | Medium (service account) | Simple |
-| Production Ready | ✅ Yes | ⚠️ Testing only |
-| Token in Header | ✅ Yes | ❌ No |
-| Compliance Ready | ✅ Yes | ❌ No |
-
-**Recommendation**: Use OIDC for production deployments.
-
----
-
 ## Testing
 
 After deployment:
@@ -331,15 +315,6 @@ This will remove:
 
 ---
 
-## 🆚 Need No-Auth Version?
-
-If you just want to test without OIDC (not recommended for production):
-
-- Use `../client_package/` instead
-- No Lambda changes required
-- Less secure (public endpoint)
-
----
 
 ## 📞 Support
 
