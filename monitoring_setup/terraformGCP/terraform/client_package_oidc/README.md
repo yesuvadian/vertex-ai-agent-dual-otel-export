@@ -110,24 +110,9 @@ aws_lambda_url = "https://your-lambda-url.lambda-url.us-east-1.on.aws"
 agent_ids = ["agent-123"]  # Optional: filter by specific agents
 ```
 
-### Step 3: Set Service Account Credentials
+### Step 3: Deploy Infrastructure
 
-**Linux/Mac/Git Bash:**
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/appengine-sa-key.json"
-```
-
-**Windows PowerShell:**
-```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS="$pwd\appengine-sa-key.json"
-```
-
-**Windows CMD:**
-```cmd
-set GOOGLE_APPLICATION_CREDENTIALS=%cd%\appengine-sa-key.json
-```
-
-### Step 4: Deploy Infrastructure
+**Note:** Credentials are automatically loaded from `appengine-sa-key.json` (configured in `main.tf` provider block).
 
 ```bash
 # Initialize Terraform
